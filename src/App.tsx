@@ -8,6 +8,7 @@ import { Helmet } from "react-helmet-async";
 import Debug from "./components/Debug";
 
 import { useThemeState } from "./contexts/ThemeContext";
+import ThemePreview from "./util/Themes";
 
 const AppContainer = styled.div`
   display: flex;
@@ -19,7 +20,7 @@ const AppContainer = styled.div`
 const Wrapper = styled.div`
   display: flex;
   /* opacity: 0.5; */
-  background-color: ${({ theme }) => theme.colors.primary};
+  background-color: ${({ theme }) => theme.colors.primary.main};
 `;
 
 function App() {
@@ -34,13 +35,11 @@ function App() {
   return (
     <AppContainer className="App">
       <Helmet>
-        <meta name="theme-color" content={theme.colors.background} />
-        <title>{theme.colors.background}</title>
+        <meta name="theme-color" content={theme.colors.background.main} />
+        <title>{theme.colors.background.main}</title>
       </Helmet>
-      <Wrapper>
-        <Debug data={theme} />
-        <Debug data={currentTheme} />
-      </Wrapper>
+      <Wrapper></Wrapper>
+      <ThemePreview theme={currentTheme} />
       <button
         onClick={() => {
           console.log("themeState: ", currentTheme);
@@ -81,8 +80,14 @@ function App() {
             ...currentCustomTheme,
             colors: {
               ...currentCustomTheme.colors,
-              primary: colorChosen,
-              background: colorChosen,
+              primary: {
+                ...currentCustomTheme.colors.primary,
+                main: colorChosen,
+              },
+              background: {
+                ...currentCustomTheme.colors.background,
+                main: colorChosen,
+              },
             },
             // ...currentCustomTheme,
             // colors: {

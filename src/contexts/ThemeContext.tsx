@@ -1,6 +1,6 @@
 import { Theme, ThemeProvider } from "@emotion/react";
 import React, { createContext, useContext, useState } from "react";
-import { GlobalReset, THEMES } from "../Themes";
+import { GlobalReset, THEMES } from "../util/Themes";
 
 type State = {
   selectedTheme: string;

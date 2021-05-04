@@ -7,7 +7,7 @@ declare module "@emotion/react" {
     weight: string;
   }
   export interface Dimension {
-    baseUnit: number;
+    unit: number;
     mainNav: {
       maxWidth: number;
       maxHeight: number;
@@ -17,30 +17,45 @@ declare module "@emotion/react" {
       maxHeight: number;
     };
   }
+
+  export interface Breakpoints {
+    xs: number;
+    s: number;
+    m: number;
+    l: number;
+    xl: number;
+  }
+
+  export interface Color {
+    main: string;
+    light: string;
+    lighter: string;
+    dark: string;
+    darker: string;
+  }
+
+  /** MainColor is a type that says you must provide atleast a "main" property for your color */
+  export type MainColor = Partial<Color> & Pick<Color, "main">;
+
   export interface Theme {
     name: string;
     dimensions: Dimension;
-    colors: {
-      primary: string;
-      secondary: string;
-      background: string;
-      surface: string;
-      onPrimary: string;
-      onSecondary: string;
-      onBackground: string;
-      onSurface: string;
-      outline: string;
-      error: string;
-      correct: string;
-      warning: string;
-    };
     font: Font;
-    breakpoints?: {
-      xs: string;
-      x: string;
-      m: string;
-      l: string;
-      xl: string;
+    breakpoints?: Breakpoints;
+    colors: {
+      primary: Color;
+      secondary: Color;
+      background: Color;
+      surface: Color;
+
+      onPrimary: Color;
+      onSecondary: Color;
+      onBackground: Color;
+      onSurface: Color;
+
+      error: Color;
+      correct: Color;
+      warning: Color;
     };
   }
 }
