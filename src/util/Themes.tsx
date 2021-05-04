@@ -16,7 +16,7 @@ import ColorString from "color";
 /**
  * Creates a spread of colors based on a "main" color
  * @args color is an object with at least a "main" property
- * @returns Returns a {<Color>} object
+ * @returns Returns a Color object
  */
 const createColorSpread = (color: MainColor): Color => {
   const mainColor = ColorString(color.main);
@@ -207,14 +207,14 @@ const getFontColor = (color: string) =>
 const Column = styled.div`
   flex: 1;
   /* background-color: ${({ theme }) => theme.colors.background.main}; */
-  background-color: ${({ c }: { c: any }) => c};
+  background-color: ${({ c }: { c: string }) => c};
   padding: 1rem;
 
   display: flex;
   flex-direction: column;
 
   span {
-    color: ${({ c }: { c: any }) => getFontColor(c)};
+    color: ${({ c }: { c: string }) => getFontColor(c)};
   }
 `;
 

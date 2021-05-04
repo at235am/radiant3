@@ -41,7 +41,7 @@ declare module "@emotion/react" {
     name: string;
     dimensions: Dimension;
     font: Font;
-    breakpoints?: Breakpoints;
+    breakpoints: Breakpoints;
     colors: {
       primary: Color;
       secondary: Color;

@@ -3,27 +3,44 @@ import { css, jsx, Theme, useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
 
 // libraries:
-import { BrowserRouter, Switch, Route, Redirect } from "react-router-dom";
+import { BrowserRouter, Switch, Route, Redirect, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Debug from "./components/Debug";
+import { useMediaQuery } from "react-responsive";
 
 import { useThemeState } from "./contexts/ThemeContext";
 import ThemePreview from "./util/Themes";
+import { motion } from "framer-motion";
+import { useState } from "react";
+import ProPage from "./pages/ProPage";
+import CrosshairCreator from "./pages/CrosshairCreator";
 
 const AppContainer = styled.div`
+  /* border: 3px solid pink; */
+  width: 100%;
+
+  display: flex;
+  flex-direction: row;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.m}px) {
+    flex-direction: column;
+  }
+`;
+const SidebarPortalLocation = styled(motion.div)`
+  /* border: 1px solid yellow; */
+  overflow: hidden;
+  background-color: ${({ theme }) => theme.colors.surface.main};
+`;
+
+const PageContainer = styled.div`
+  overflow: auto;
+  flex: 1;
+
   display: flex;
   flex-direction: column;
-  overflow: auto;
-  width: 100%;
 `;
 
-const Wrapper = styled.div`
-  display: flex;
-  /* opacity: 0.5; */
-  background-color: ${({ theme }) => theme.colors.primary.main};
-`;
-
-function App() {
+const App = () => {
   const theme = useTheme();
   const {
     currentTheme,
@@ -31,79 +48,83 @@ function App() {
     changeCustomTheme,
     toggleThroughAllThemes,
   } = useThemeState();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const toggleSidebar = () => setSidebarOpen((val) => !val);
+  const isMobile = useMediaQuery({ query: "(max-width: 550px)" });
+
+  const horizontalVariant = {
+    open: {
+      width: "20rem",
+      height: "100%",
+
+      // transition: {
+      //   staggerChildren: 0.04,
+      //   delayChildren: 0.1,
+      // },
+    },
+    closed: {
+      width: 0,
+      height: "100%",
+
+      // transition: {
+      //   delay: 0.2,
+      // },
+    },
+  };
+
+  const verticalVariant = {
+    open: {
+      height: "20rem",
+      width: "100%",
+
+      // on mobile phones this animation lags presumably cus of the large scroll content
+      // this is a way to "turn off" the animation
+      // transition: { duration: 0 },
+
+      // transition: {
+      //   staggerChildren: 0.04,
+      //   delayChildren: 0.1,
+      // },
+    },
+    closed: {
+      width: "100%",
+      height: 0,
+
+      // on mobile phones this animation lags presumably cus of the large scroll content
+      // this is a way to "turn off" the animation
+      // transition: { duration: 0 },
+
+      // transition: {
+      //   delay: 0.2,
+      // },
+    },
+  };
 
   return (
-    <AppContainer className="App">
+    <AppContainer>
       <Helmet>
         <meta name="theme-color" content={theme.colors.background.main} />
         <title>{theme.colors.background.main}</title>
       </Helmet>
-      <Wrapper></Wrapper>
-      <ThemePreview theme={currentTheme} />
-      <button
-        onClick={() => {
-          console.log("themeState: ", currentTheme);
-        }}
-      >
-        CONTEXT
-      </button>
-      <button onClick={toggleThroughAllThemes}>ALL THEMES</button>
-      <button onClick={toggleTheme}>toggle themes</button>
-      {/* <button
-        onClick={() => {
-          const colors = ["#ff0000", "#00ff00", "#0000ff"];
-          function randomInRange(start: number, end: number) {
-            return Math.floor(Math.random() * (end - start + 1) + start);
-          }
-
-          const colorChosen = colors[randomInRange(0, colors.length - 1)];
-
-          const change = {
-            colors: { ...defaultCustomTheme.colors, background: colorChosen },
-          };
-          console.log("-------\nthemechange", change);
-          console.log("color chosen", colorChosen);
-          changeCustomTheme(change);
-        }}
-      ></button> */}
-      <button
-        onClick={() => {
-          const colors = ["#ff0000", "#00ff00", "#0000ff"];
-          function randomInRange(start: number, end: number) {
-            return Math.floor(Math.random() * (end - start + 1) + start);
-          }
-
-          const colorChosen = colors[randomInRange(0, colors.length - 1)];
-          console.log(colorChosen);
-
-          const updater = (currentCustomTheme: Theme) => ({
-            ...currentCustomTheme,
-            colors: {
-              ...currentCustomTheme.colors,
-              primary: {
-                ...currentCustomTheme.colors.primary,
-                main: colorChosen,
-              },
-              background: {
-                ...currentCustomTheme.colors.background,
-                main: colorChosen,
-              },
-            },
-            // ...currentCustomTheme,
-            // colors: {
-            //   ...currentCustomTheme.colors,
-            //   primary: "#f34489",
-            //   background: "#00e846",
-            // },
-          });
-
-          changeCustomTheme(updater);
-        }}
-      >
-        change custom theme
-      </button>
+      <BrowserRouter>
+        <SidebarPortalLocation
+          id="sidebar-portal"
+          variants={isMobile ? verticalVariant : horizontalVariant}
+          initial={sidebarOpen ? "open" : "closed"}
+          animate={sidebarOpen ? "open" : "closed"}
+        />
+        <PageContainer className="page-container">
+          <button onClick={() => setSidebarOpen((val) => !val)}>dsfsdf</button>
+          <Link to="/pro">pro</Link>
+          <Link to="/cc">cc</Link>
+          <Switch>
+            <Route path="/pro" component={ProPage} />
+            <Route path="/cc" component={CrosshairCreator} />
+          </Switch>
+        </PageContainer>
+      </BrowserRouter>
     </AppContainer>
   );
-}
+};
 
 export default App;
