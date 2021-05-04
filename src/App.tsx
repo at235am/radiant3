@@ -14,6 +14,8 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import ProPage from "./pages/ProPage";
 import CrosshairCreator from "./pages/CrosshairCreator";
+import NavigationBar from "./components/NavigationBar";
+import { useUIState } from "./contexts/UIContext";
 
 const AppContainer = styled.div`
   /* border: 3px solid pink; */
@@ -48,9 +50,8 @@ const App = () => {
     changeCustomTheme,
     toggleThroughAllThemes,
   } = useThemeState();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const toggleSidebar = () => setSidebarOpen((val) => !val);
-  const isMobile = useMediaQuery({ query: "(max-width: 550px)" });
+
+  const { sidebarState, toggleSidebar, isMobile } = useUIState();
 
   const horizontalVariant = {
     open: {
@@ -107,14 +108,14 @@ const App = () => {
         <title>{theme.colors.background.main}</title>
       </Helmet>
       <BrowserRouter>
+        <NavigationBar />
         <SidebarPortalLocation
           id="sidebar-portal"
           variants={isMobile ? verticalVariant : horizontalVariant}
-          initial={sidebarOpen ? "open" : "closed"}
-          animate={sidebarOpen ? "open" : "closed"}
+          initial={sidebarState ? "open" : "closed"}
+          animate={sidebarState ? "open" : "closed"}
         />
         <PageContainer className="page-container">
-          <button onClick={() => setSidebarOpen((val) => !val)}>dsfsdf</button>
           <Link to="/pro">pro</Link>
           <Link to="/cc">cc</Link>
           <Switch>

@@ -6,14 +6,17 @@ import App from "./App";
 import { HelmetProvider } from "react-helmet-async";
 // import Themer from "./components/Themer";
 import { ThemeStateProvider } from "./contexts/ThemeContext";
+import { UIStateProvider } from "./contexts/UIContext";
 // import reportWebVitals from "./reportWebVitals";
 
 ReactDOM.render(
   <React.StrictMode>
     <ThemeStateProvider>
-      <HelmetProvider>
-        <App />
-      </HelmetProvider>
+      <UIStateProvider>
+        <HelmetProvider>
+          <App />
+        </HelmetProvider>
+      </UIStateProvider>
     </ThemeStateProvider>
   </React.StrictMode>,
   document.getElementById("root")
