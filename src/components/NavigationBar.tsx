@@ -2,8 +2,13 @@
 import { css, jsx, useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
 import { rgba } from "emotion-rgba";
-import { motion } from "framer-motion";
+
+// library:
+import { motion, AnimatePresence } from "framer-motion";
 import { createElement, forwardRef, useEffect, useState } from "react";
+import { IconType } from "react-icons";
+import { Link } from "react-router-dom";
+import { LinkProps } from "react-helmet-async";
 
 // icons:
 import {
@@ -22,17 +27,12 @@ import { FiCrosshair } from "react-icons/fi";
 import { CgMenu } from "react-icons/cg";
 import { BiCrosshair } from "react-icons/bi";
 
-// custom:
-// import { themeState } from "../recoil/ThemeState";
-// import { useThemeCustom } from "./Theme";
-// import ToggleButton from "./ToggleButton";
+// custom components:
 import Debug from "./Debug";
-import { IconType } from "react-icons";
+
+// custom hooks:
 import { useThemeState } from "../contexts/ThemeContext";
 import { useUIState } from "../contexts/UIContext";
-
-const HEIGHT = 5;
-const WIDTH = 7;
 
 const NavbarContainer = styled(motion.nav)`
   position: relative;
@@ -42,51 +42,46 @@ const NavbarContainer = styled(motion.nav)`
   justify-content: center;
   align-items: center;
 
-  @media (max-width: 550px) {
-    /* background-color: red; */
+  @media (max-width: ${({ theme }) => theme.breakpoints.m}px) {
     flex-direction: column-reverse;
 
-    /* height: ${HEIGHT}rem; */
-    /* max-height: ${HEIGHT}rem; */
-    min-height: ${HEIGHT}rem;
+    ${({ theme }) => css`
+      height: ${theme.dimensions.mainNav.maxHeight}px;
+      max-height: ${theme.dimensions.mainNav.maxHeight}px;
+      min-height: ${theme.dimensions.mainNav.maxHeight}px;
+    `}
 
     width: 100%;
-
-    padding: 0 1rem;
-
-    /* top: 5rem; */
+    padding: 0;
   }
 
-  @media (min-width: 551px) {
-    /* background-color: blue; */
+  @media (min-width: ${({ theme }) => theme.breakpoints.m + 1}px) {
     flex-direction: column;
 
-    width: ${WIDTH}rem;
-    max-width: ${WIDTH}rem;
-    min-width: ${WIDTH}rem;
+    ${({ theme }) => css`
+      width: ${theme.dimensions.mainNav.maxWidth}px;
+      max-width: ${theme.dimensions.mainNav.maxWidth}px;
+      min-width: ${theme.dimensions.mainNav.maxWidth}px;
+    `}
 
     height: 100%;
-
     padding: 0.5rem 0;
-
-    /* top: 0; */
   }
 `;
 
-const MainNav = styled.ul`
+const MainNav = styled(motion.ul)`
+  position: relative;
+  z-index: -100;
   display: flex;
   flex-direction: column;
-  @media (max-width: 550px) {
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.m}px) {
     background-color: ${({ theme }) => theme.colors.surface.main};
     position: absolute;
-    top: ${HEIGHT}rem;
+    top: ${({ theme }) => theme.dimensions.mainNav.maxHeight}px;
     left: 0;
 
     width: 100%;
-  }
-
-  @media (min-width: 551px) {
-    /* background-color: blue; */
   }
 `;
 
@@ -97,28 +92,71 @@ const SubNav = styled.ul`
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
+  padding: 0 1rem;
 
-  @media (max-width: 550px) {
+  @media (max-width: ${({ theme }) => theme.breakpoints.m}px) {
     flex-direction: row;
     width: 100%;
-  }
-
-  @media (min-width: 551px) {
-    /* background-color: blue; */
-    flex-direction: column;
+    background-color: inherit;
   }
 `;
+///////////////////////////////////////////////////////////////////////////////////////////////
+const NavItem = styled(motion.li)`
+  cursor: pointer;
+  border-radius: 3px;
+  overflow: hidden;
 
-const NavItem = styled.li`
-  /* padding: 0 0.5rem; */
+  width: ${({ theme }) => theme.dimensions.mainNav.maxWidth - 20}px;
+  height: ${({ theme }) => theme.dimensions.mainNav.maxWidth - 20}px;
 
-  width: ${WIDTH - 1.5}rem;
-  height: ${WIDTH - 1.5}rem;
+  a,
+  button {
+    background-color: transparent;
 
-  @media (max-width: 550px) {
     width: 100%;
-    height: ${HEIGHT - 1.5}rem;
+    height: 100%;
 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    span {
+      margin-right: 0;
+      width: ${({ iconSize }: { iconSize: number }) => iconSize * 2}px;
+      height: ${({ iconSize }: { iconSize: number }) => iconSize * 2}px;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      svg {
+        height: 100%;
+        width: 100%;
+
+        path,
+        line {
+          fill: ${({ theme }) => theme.colors.onBackground.main};
+        }
+      }
+    }
+
+    p {
+      width: 100%;
+      font-size: 12px;
+      color: ${({ theme }) => theme.colors.onBackground.main};
+
+      display: flex;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.m}px) {
+    width: 100%;
+    height: 50px;
+
+    a,
     button {
       flex-direction: row;
       justify-content: flex-start;
@@ -127,144 +165,114 @@ const NavItem = styled.li`
 
       span {
         margin-right: 1rem;
-        ${({ iconSize }: { iconSize: any }) =>
+        ${({ iconSize }) =>
           css`
-            width: ${iconSize ? `${iconSize}px` : "1.5rem"};
-            height: ${iconSize ? `${iconSize}px` : "1.5rem"};
+            width: ${iconSize + 5}px;
+            height: ${iconSize + 5}px;
           `}
+      }
+      p {
+        justify-content: flex-start;
+        font-size: 1rem;
       }
     }
   }
 
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.background.light};
+  }
 `;
 
-const NavItemSmall = styled.li`
-  /* padding: 0.5rem; */
+const NavItemSmall = styled(motion.li)`
+  cursor: pointer;
+  border-radius: 5px;
+  overflow: hidden;
 
   width: 3rem;
   height: 3rem;
 
-  @media (max-width: 550px) {
-    width: 3rem;
-    height: 3rem;
-  }
+  a,
+  button {
+    background-color: transparent;
 
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-`;
-
-const Button = styled(motion.button)`
-  background-color: transparent;
-
-  height: 100%;
-  width: 100%;
-
-  overflow: hidden;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
-  border-radius: 5px;
-
-  &:hover {
-    background-color: ${({ theme }) =>
-      rgba(theme.colors.onSecondary.main, 0.05)};
-  }
-
-  p {
-    font-size: 12px;
-    color: ${({ theme }) => theme.colors.onBackground.main};
-  }
-
-  span {
-    ${({ small, iconSize }: { small: any; iconSize: any }) =>
-      small
-        ? css`
-            width: ${iconSize ? `${iconSize}px` : "1.5rem"};
-            height: ${iconSize ? `${iconSize}px` : "1.5rem"};
-          `
-        : css`
-            width: ${iconSize ? `${iconSize}px` : "2.5rem"};
-            height: ${iconSize ? `${iconSize}px` : "2.5rem"};
-          `}
+    width: 100%;
+    height: 100%;
 
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
 
-    svg {
-      height: 100%;
-      width: 100%;
+    span {
+      width: ${({ iconSize }: { iconSize: number }) => iconSize}px;
+      height: ${({ iconSize }: { iconSize: number }) => iconSize}px;
 
-      path,
-      line {
-        fill: ${({ theme }) => theme.colors.onBackground.main};
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      svg {
+        height: 100%;
+        width: 100%;
+
+        path,
+        line {
+          fill: ${({ theme }) => theme.colors.onBackground.main};
+        }
       }
     }
   }
 
-  @media (max-width: 550px) {
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.background.light};
   }
 `;
 
-type NavButtonProps = {
+const NavLink = styled(motion(Link))``;
+const NavButton = styled(motion.button)``;
+
+type NewNavItemProps = {
+  to?: string;
   text?: string;
   icon?: IconType;
   iconSize?: number;
   small?: boolean;
-  iconAnimation?: any;
-  css?: any;
   className?: string;
   onClick?: () => void;
+  iconAnimationProps?: object;
 };
 
-const NavButton = ({
+const NewNavItem = ({
+  to = "/",
   text,
   icon,
-  iconSize,
-  small = false,
-  iconAnimation,
-  css,
+  small,
+  iconSize = 20,
   className,
+  iconAnimationProps,
   onClick = () => {},
-  ...props
-}: NavButtonProps & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
+}: NewNavItemProps) => {
   const Container = small ? NavItemSmall : NavItem;
+  const Inner = to === "/" ? NavButton : NavLink;
 
   return (
-    <Container css={css} className={className} iconSize={iconSize}>
-      <Button iconSize={iconSize} small={small} onClick={onClick}>
+    <Container iconSize={iconSize} className={className}>
+      <Inner to={to} onClick={onClick}>
         {icon && (
-          <motion.span {...iconAnimation}>{createElement(icon)}</motion.span>
+          <motion.span {...iconAnimationProps}>
+            {createElement(icon)}
+          </motion.span>
         )}
-
-        {text && <p>{text}</p>}
-      </Button>
+        {text && <motion.p>{text}</motion.p>}
+      </Inner>
     </Container>
   );
 };
 
-const Logo = styled(NavButton)`
-  button {
-    p {
-      position: absolute;
-      color: ${({ theme }) => theme.colors.onBackground.main};
-      font-size: 1.25rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-
-      transform: translateY(-10px);
-    }
-
+const Logo = styled(NewNavItem)`
+  button,
+  a {
     span {
       position: relative;
       transform-origin: center 39%;
@@ -289,9 +297,7 @@ const Logo = styled(NavButton)`
   }
 `;
 
-const MenuButton = styled(NavButton)`
-  /* flex: 1; */
-  /* justify-self: flex-start; */
+const MenuButton = styled(NewNavItem)`
   margin-right: auto;
 `;
 
@@ -327,6 +333,20 @@ const NavigationBar = () => {
     variants: rotate,
     initial: sidebarState ? "open" : "closed",
     animate: sidebarState ? "open" : "closed",
+  };
+
+  const mainNavAnimation = {
+    variants: {
+      open: { y: 0 },
+      closed: {
+        y: -300,
+      },
+    },
+    initial: "closed",
+    animate: showMainNav ? "open" : "closed",
+    exit: "closed",
+    transition: { duration: 0.25 },
+    // transition: { velocity: 500 },
   };
 
   const crossHairAnimation = {
@@ -366,18 +386,60 @@ const NavigationBar = () => {
     toggleMainNav();
   };
 
+  const closeMainNavToggleSidebar = () => {
+    setMainNav(false);
+    toggleSidebar();
+  };
+
+  const closeMainNav = () => setMainNav(false);
+
   return (
     <NavbarContainer
       variants={navBarColor}
       initial={sidebarState ? "open" : "closed"}
       animate={sidebarState ? "open" : "closed"}
     >
-      {showMainNav && (
-        <MainNav>
-          {!isMobile && (
-            <Logo text="" icon={MdDetails} iconAnimation={logoAnimation} />
-          )}
-          <NavButton
+      <AnimatePresence>
+        {showMainNav && (
+          <MainNav {...mainNavAnimation}>
+            {!isMobile && (
+              <Logo
+                icon={MdDetails}
+                // iconAnimation={logoAnimation}
+              />
+            )}
+            <NewNavItem
+              text="Crosshair"
+              icon={BiCrosshair}
+              to="/cc"
+              onClick={closeMainNav}
+              // iconAnimation={crossHairAnimation}
+            />
+            <NewNavItem
+              text="Map Tools"
+              icon={MdMap}
+              to="/map-tools"
+              onClick={closeMainNav}
+            />
+            <NewNavItem
+              text="Top Picks"
+              icon={MdStar}
+              to="/top-picks"
+              onClick={closeMainNav}
+            />
+            <NewNavItem
+              text="Pros"
+              icon={FaCrown}
+              to="/pro"
+              onClick={closeMainNav}
+            />
+            <NewNavItem
+              text="Community"
+              icon={MdPeople}
+              to="/community"
+              onClick={closeMainNav}
+            />
+            {/* <NavButton
             text="Crosshair"
             icon={BiCrosshair}
             iconAnimation={crossHairAnimation}
@@ -385,10 +447,10 @@ const NavigationBar = () => {
           <NavButton text="Map Tools" icon={MdMap} />
           <NavButton text="Top Picks" icon={MdStar} />
           <NavButton text="Pros" icon={FaCrown} />
-          <NavButton text="Community" icon={MdPeople} />
-        </MainNav>
-      )}
-
+          <NavButton text="Community" icon={MdPeople} /> */}
+          </MainNav>
+        )}
+      </AnimatePresence>
       <SubNav>
         {isMobile && (
           <>
@@ -400,17 +462,18 @@ const NavigationBar = () => {
             />
           </>
         )}
-        <NavButton
+
+        <NewNavItem
           small
           onClick={toggleTheme}
           icon={themeToggle ? MdBrightnessHigh : MdBrightness4}
         />
-        <NavButton
+        <NewNavItem
           small
-          onClick={toggleSidebar}
+          onClick={closeMainNavToggleSidebar}
           icon={MdLastPage}
-          // iconSize={26}
-          iconAnimation={sidebarButtonAnimation}
+          iconAnimationProps={sidebarButtonAnimation}
+          // iconAnimation={sidebarButtonAnimation}
         />
       </SubNav>
     </NavbarContainer>

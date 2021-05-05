@@ -22,11 +22,11 @@ const createColorSpread = (color: MainColor): Color => {
   const mainColor = ColorString(color.main);
 
   return {
-    lighter: color.lighter ? color.lighter : mainColor.lighten(0.7).hex(),
-    light: color.light ? color.light : mainColor.lighten(0.3).hex(),
+    lighter: color.lighter ? color.lighter : mainColor.lighten(0.2).hex(),
+    light: color.light ? color.light : mainColor.lighten(0.1).hex(),
     main: color.main,
-    dark: color.dark ? color.dark : mainColor.darken(0.3).hex(),
-    darker: color.darker ? color.darker : mainColor.darken(0.7).hex(),
+    dark: color.dark ? color.dark : mainColor.darken(0.1).hex(),
+    darker: color.darker ? color.darker : mainColor.darken(0.2).hex(),
   };
 };
 
@@ -35,8 +35,8 @@ const ccs = createColorSpread;
 export const dimensions: Dimension = {
   unit: 14,
   mainNav: {
-    maxWidth: 60,
-    maxHeight: 60,
+    maxWidth: 100,
+    maxHeight: 70,
   },
   subNav: {
     maxWidth: 60,
@@ -91,7 +91,7 @@ export const lightTheme: Theme = {
     primary: ccs({ main: "#43dbab" }),
     secondary: ccs({ main: "#6c63ff" }),
 
-    background: ccs({ main: "#edf0f5" }),
+    background: ccs({ main: "#edf0f5", light: "#f5f5f5" }),
     surface: ccs({ main: "#ffffff" }),
 
     onPrimary: ccs({ main: "#ffffff" }),
