@@ -1,29 +1,25 @@
 // styling:
-import { css, jsx, useTheme } from "@emotion/react";
+import { css, jsx, Theme, useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
 import { rgba } from "emotion-rgba";
 
 // library:
 import { motion, AnimatePresence } from "framer-motion";
-import { createElement, forwardRef, useEffect, useState } from "react";
+import { createElement, useEffect, useState } from "react";
 import { IconType } from "react-icons";
 import { Link } from "react-router-dom";
-import { LinkProps } from "react-helmet-async";
 
 // icons:
 import {
   MdBrightnessHigh,
   MdBrightness4,
   MdDetails,
-  MdFirstPage,
   MdLastPage,
-  MdFlare,
   MdMap,
   MdPeople,
   MdStar,
 } from "react-icons/md";
-import { FaCrown, FaCrosshairs } from "react-icons/fa";
-import { FiCrosshair } from "react-icons/fi";
+import { FaCrown } from "react-icons/fa";
 import { CgMenu } from "react-icons/cg";
 import { BiCrosshair } from "react-icons/bi";
 
@@ -100,14 +96,10 @@ const SubNav = styled.ul`
     background-color: inherit;
   }
 `;
-///////////////////////////////////////////////////////////////////////////////////////////////
-const NavItem = styled(motion.li)`
-  cursor: pointer;
-  border-radius: 3px;
-  overflow: hidden;
 
-  width: ${({ theme }) => theme.dimensions.mainNav.maxWidth - 20}px;
-  height: ${({ theme }) => theme.dimensions.mainNav.maxWidth - 20}px;
+const navItemBaseStyles = ({ theme }: { theme: Theme }) => css`
+  cursor: pointer;
+  overflow: hidden;
 
   a,
   button {
@@ -122,10 +114,6 @@ const NavItem = styled(motion.li)`
     align-items: center;
 
     span {
-      margin-right: 0;
-      width: ${({ iconSize }: { iconSize: number }) => iconSize * 2}px;
-      height: ${({ iconSize }: { iconSize: number }) => iconSize * 2}px;
-
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -137,9 +125,30 @@ const NavItem = styled(motion.li)`
 
         path,
         line {
-          fill: ${({ theme }) => theme.colors.onBackground.main};
+          fill: ${theme.colors.onBackground.main};
         }
       }
+    }
+  }
+
+  &:hover {
+    background-color: ${theme.colors.background.light};
+  }
+`;
+
+const NavItemContainer = styled(motion.li)`
+  ${navItemBaseStyles}
+
+  border-radius: 3px;
+
+  width: ${({ theme }) => theme.dimensions.mainNav.maxWidth - 20}px;
+  height: ${({ theme }) => theme.dimensions.mainNav.maxWidth - 20}px;
+
+  a,
+  button {
+    span {
+      width: ${({ iconSize }: { iconSize: number }) => iconSize * 2}px;
+      height: ${({ iconSize }: { iconSize: number }) => iconSize * 2}px;
     }
 
     p {
@@ -177,55 +186,22 @@ const NavItem = styled(motion.li)`
       }
     }
   }
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.background.light};
-  }
 `;
 
-const NavItemSmall = styled(motion.li)`
-  cursor: pointer;
+const NavItemContainerSmall = styled(motion.li)`
+  ${navItemBaseStyles}
+
   border-radius: 5px;
-  overflow: hidden;
 
   width: 3rem;
   height: 3rem;
 
   a,
   button {
-    background-color: transparent;
-
-    width: 100%;
-    height: 100%;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-
     span {
       width: ${({ iconSize }: { iconSize: number }) => iconSize}px;
       height: ${({ iconSize }: { iconSize: number }) => iconSize}px;
-
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-
-      svg {
-        height: 100%;
-        width: 100%;
-
-        path,
-        line {
-          fill: ${({ theme }) => theme.colors.onBackground.main};
-        }
-      }
     }
-  }
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.background.light};
   }
 `;
 
@@ -243,18 +219,18 @@ type NewNavItemProps = {
   iconAnimationProps?: object;
 };
 
-const NewNavItem = ({
-  to = "/",
+const NavItem = ({
+  to = "#",
   text,
   icon,
-  small,
+  small = false,
   iconSize = 20,
   className,
   iconAnimationProps,
   onClick = () => {},
 }: NewNavItemProps) => {
-  const Container = small ? NavItemSmall : NavItem;
-  const Inner = to === "/" ? NavButton : NavLink;
+  const Container = small ? NavItemContainerSmall : NavItemContainer;
+  const Inner = to === "#" ? NavButton : NavLink;
 
   return (
     <Container iconSize={iconSize} className={className}>
@@ -270,7 +246,7 @@ const NewNavItem = ({
   );
 };
 
-const Logo = styled(NewNavItem)`
+const Logo = styled(NavItem)`
   button,
   a {
     span {
@@ -297,7 +273,7 @@ const Logo = styled(NewNavItem)`
   }
 `;
 
-const MenuButton = styled(NewNavItem)`
+const MenuButton = styled(NavItem)`
   margin-right: auto;
 `;
 
@@ -310,32 +286,33 @@ const NavigationBar = () => {
     sidebarState,
   } = useUIState();
   const [mainNav, setMainNav] = useState(false);
-
   const { selectedTheme, toggleTheme } = useThemeState();
   const themeToggle = selectedTheme === "dark" ? true : false;
   const showMainNav = mainNav ? true : !isMobile;
 
-  const rotate = {
-    open: { rotate: 180 + (isMobile ? 90 : 0) },
-    closed: { rotate: 0 + (isMobile ? 90 : 0) },
-  };
-
-  const navBarColor = {
-    open: {
-      backgroundColor: theme.colors.background.main,
+  const navBarColorAnimationProps = {
+    variants: {
+      open: {
+        backgroundColor: theme.colors.background.main,
+      },
+      closed: {
+        backgroundColor: theme.colors.surface.main,
+      },
     },
-    closed: {
-      backgroundColor: theme.colors.surface.main,
-    },
-  };
-
-  const sidebarButtonAnimation = {
-    variants: rotate,
     initial: sidebarState ? "open" : "closed",
     animate: sidebarState ? "open" : "closed",
   };
 
-  const mainNavAnimation = {
+  const sidebarButtonAnimationProps = {
+    variants: {
+      open: { rotate: 180 + (isMobile ? 90 : 0) },
+      closed: { rotate: 0 + (isMobile ? 90 : 0) },
+    },
+    initial: sidebarState ? "open" : "closed",
+    animate: sidebarState ? "open" : "closed",
+  };
+
+  const mainNavAnimationProps = {
     variants: {
       open: { y: 0 },
       closed: {
@@ -349,7 +326,7 @@ const NavigationBar = () => {
     // transition: { velocity: 500 },
   };
 
-  const crossHairAnimation = {
+  const crossHairAnimationProps = {
     whileHover: {
       x: [0, 20, -20, 40, -50, 0, 0, 0, 0, 0, 0, 0],
       y: [0, 0, 50, 20, -20, 0, 0, 0, 0, 0, 0, 0],
@@ -367,7 +344,7 @@ const NavigationBar = () => {
     },
   };
 
-  const logoAnimation = {
+  const logoAnimationProps = {
     whileHover: {
       // originX: 0.5,
       rotate: 360,
@@ -394,86 +371,71 @@ const NavigationBar = () => {
   const closeMainNav = () => setMainNav(false);
 
   return (
-    <NavbarContainer
-      variants={navBarColor}
-      initial={sidebarState ? "open" : "closed"}
-      animate={sidebarState ? "open" : "closed"}
-    >
+    <NavbarContainer {...navBarColorAnimationProps}>
       <AnimatePresence>
         {showMainNav && (
-          <MainNav {...mainNavAnimation}>
+          <MainNav {...mainNavAnimationProps}>
             {!isMobile && (
               <Logo
+                to="/"
                 icon={MdDetails}
-                // iconAnimation={logoAnimation}
+                // iconAnimation={logoAnimationProps}
               />
             )}
-            <NewNavItem
+            <NavItem
               text="Crosshair"
               icon={BiCrosshair}
               to="/cc"
               onClick={closeMainNav}
-              // iconAnimation={crossHairAnimation}
+              // iconAnimation={crossHairAnimationProps}
             />
-            <NewNavItem
+            <NavItem
               text="Map Tools"
               icon={MdMap}
               to="/map-tools"
               onClick={closeMainNav}
             />
-            <NewNavItem
+            <NavItem
               text="Top Picks"
               icon={MdStar}
               to="/top-picks"
               onClick={closeMainNav}
             />
-            <NewNavItem
+            <NavItem
               text="Pros"
               icon={FaCrown}
-              to="/pro"
+              to="/pros"
               onClick={closeMainNav}
             />
-            <NewNavItem
+            <NavItem
               text="Community"
               icon={MdPeople}
               to="/community"
               onClick={closeMainNav}
             />
-            {/* <NavButton
-            text="Crosshair"
-            icon={BiCrosshair}
-            iconAnimation={crossHairAnimation}
-          />
-          <NavButton text="Map Tools" icon={MdMap} />
-          <NavButton text="Top Picks" icon={MdStar} />
-          <NavButton text="Pros" icon={FaCrown} />
-          <NavButton text="Community" icon={MdPeople} /> */}
           </MainNav>
         )}
       </AnimatePresence>
       <SubNav>
         {isMobile && (
-          <>
-            <MenuButton
-              small
-              icon={CgMenu}
-              iconSize={23}
-              onClick={closeSidebarToggleMainNav}
-            />
-          </>
+          <MenuButton
+            small
+            icon={CgMenu}
+            iconSize={23}
+            onClick={closeSidebarToggleMainNav}
+          />
         )}
 
-        <NewNavItem
+        <NavItem
           small
           onClick={toggleTheme}
           icon={themeToggle ? MdBrightnessHigh : MdBrightness4}
         />
-        <NewNavItem
+        <NavItem
           small
           onClick={closeMainNavToggleSidebar}
           icon={MdLastPage}
-          iconAnimationProps={sidebarButtonAnimation}
-          // iconAnimation={sidebarButtonAnimation}
+          iconAnimationProps={sidebarButtonAnimationProps}
         />
       </SubNav>
     </NavbarContainer>

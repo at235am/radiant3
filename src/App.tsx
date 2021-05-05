@@ -116,8 +116,6 @@ const App = () => {
           animate={sidebarState ? "open" : "closed"}
         />
         <PageContainer className="page-container">
-          <Link to="/pro">pro</Link>
-          <Link to="/cc">cc</Link>
           <Switch>
             <Route path="/pro" component={ProPage} />
             <Route path="/cc" component={CrosshairCreator} />
