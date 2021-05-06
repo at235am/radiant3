@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { EmptyStatement } from "typescript";
 
 export type OrderType = "ascend" | "descend" | "none";
 
@@ -44,21 +45,22 @@ const useTable = (
   column: ColumnProps[],
   defaultColumnWidth = 150
 ) => {
-  const addDefaultValues = useCallback((objs: ColumnProps[]): Column[] => {
-    const columns: Column[] = [];
+  const addDefaultValues = useCallback(
+    (objs: ColumnProps[]): Column[] => {
+      const columns: Column[] = objs.map(
+        ({ key, label, width, format }, i: number) => ({
+          key,
+          label: label ? label : key,
+          width: width ? width : defaultColumnWidth,
+          format: format ? format : null,
+          sorted: "none",
+        })
+      );
 
-    objs.map(({ key, label, width, format }, i: number) => {
-      columns.push({
-        key,
-        label: label ? label : key,
-        width: width ? width : defaultColumnWidth,
-        format: format ? format : null,
-        sorted: "none",
-      });
-    });
-
-    return columns;
-  }, []);
+      return columns;
+    },
+    [defaultColumnWidth]
+  );
 
   const [columnAttrs, setColumnAttrs] = useState(addDefaultValues(column));
   const [tableData, setTableData] = useState(data);
@@ -66,6 +68,11 @@ const useTable = (
   const [shiftHeld, setShiftHeld] = useState(false);
   // const [columnHighlight, setColumnHighlight] = useState("");
 
+  const advanceSortType = (orderType: OrderType | undefined) => {
+    if (orderType === "ascend") return "none";
+    else if (orderType === "descend") return "ascend";
+    else return "descend";
+  };
   /**
    * Reorders the columns based on some inputs.
    * @param targetKey represents the key of the column that will move to the new position.
@@ -155,61 +162,29 @@ const useTable = (
    * @param key represents the key of the 'column' to sort.
    */
   const toggleSort = (key: string) => {
-    // there hasn't been a sort yet:
-    if (sorts.length === 0) {
-      setSorts([{ key, orderType: "descend" }]);
-      setColumnAttrs((cols) =>
-        cols.map((col) =>
-          col.key === key ? { ...col, sorted: "descend" } : col
-        )
+    setSorts((currSorts) => {
+      const index = currSorts.findIndex((sortType) => sortType.key === key);
+
+      if (index !== -1) {
+        const orderType = advanceSortType(currSorts[index].orderType);
+        return orderType === "none" ? [] : [{ key, orderType }];
+      } else return [{ key, orderType: "descend" }];
+    });
+
+    setColumnAttrs((currCols) => {
+      return currCols.map((col) =>
+        col.key === key
+          ? { ...col, sorted: advanceSortType(col.sorted) }
+          : { ...col, sorted: "none" }
       );
-      return;
-    }
-
-    const prev = { ...sorts[0] };
-
-    if (prev.key === key) {
-      // advance the sort ordering ( descend -> ascend -> none):
-
-      // theres no way for prev.orderType to be "none" since we always
-      // remove the element from the 'sorts' array if its orderType is "none"
-      // therefore the following ternary is sufficient:
-      const newOrderType = prev.orderType === "ascend" ? "none" : "ascend";
-
-      setSorts(newOrderType === "none" ? [] : [{ key, orderType: "ascend" }]);
-      setColumnAttrs((cols) =>
-        cols.map((col) =>
-          col.key === key ? { ...col, sorted: newOrderType } : col
-        )
-      );
-    } else {
-      setSorts([{ key, orderType: "descend" }]);
-
-      setColumnAttrs((cols) => {
-        // set prev key to "none"
-        const prevIndex = cols.findIndex((item) => item.key === prev.key);
-        const prevCol = cols[prevIndex];
-
-        const updatedCols = [
-          ...cols.slice(0, prevIndex),
-          { ...prevCol, sorted: "none" },
-          ...cols.slice(prevIndex + 1, cols.length),
-        ];
-
-        // set current key to "descend":
-        const currentIndex = updatedCols.findIndex((item) => item.key === key);
-        const currentCol = updatedCols[currentIndex];
-
-        return [
-          ...updatedCols.slice(0, currentIndex),
-          { ...currentCol, sorted: "descend" },
-          ...updatedCols.slice(currentIndex + 1, updatedCols.length),
-        ] as Column[];
-      });
-    }
+    });
   };
 
-  const shiftSort = (key: string) => {
+  /**
+   *
+   * @param key represents the key of the 'column' to sort
+   */
+  const toggleShiftSort = (key: string) => {
     if (shiftHeld) toggleMultiSort(key);
     else toggleSort(key);
   };
@@ -237,7 +212,7 @@ const useTable = (
 
   useEffect(() => {
     setColumnAttrs(addDefaultValues(column));
-  }, [column]);
+  }, [column, addDefaultValues]);
 
   useEffect(() => {
     let copyOfOriginalData = [...data];
@@ -248,7 +223,7 @@ const useTable = (
     });
 
     setTableData(copyOfOriginalData);
-  }, [sorts]);
+  }, [sorts, data]);
 
   return {
     columnAttrs,
@@ -260,7 +235,7 @@ const useTable = (
     changeColumnOrder,
     toggleMultiSort,
     toggleSort,
-    shiftSort,
+    toggleShiftSort,
     shiftHeld,
   };
 };
