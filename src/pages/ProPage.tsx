@@ -1,11 +1,18 @@
 import styled from "@emotion/styled";
 import SidebarPortal from "../components/SidebarPortal";
+import { useState } from "react";
+
+import Table from "../components/Table";
+
+import DATA from "../data.json";
 
 const P = styled.p`
   margin: 1rem;
 `;
 
 const ProPage = () => {
+  const [data, setData] = useState<object[]>(DATA);
+
   return (
     <>
       <SidebarPortal>
@@ -27,7 +34,6 @@ const ProPage = () => {
           voluptatibus quisquam nisi, fugit commodi, similique aspernatur?
         </P>
       </SidebarPortal>
-
       <P>
         Lorem, ipsum dolor sit amet consectetur adipisicing elit. Nobis
         delectus, eligendi earum, sed dicta ut iste eos dolorem aspernatur alias
@@ -36,7 +42,6 @@ const ProPage = () => {
         impedit? Ab numquam quasi architecto, atque sequi praesentium
         voluptatibus quisquam nisi, fugit commodi, similique aspernatur?
       </P>
-
       <P>
         Lorem, ipsum dolor sit amet consectetur adipisicing elit. Eaque
         eligendi, dolor, sit velit tempora asperiores numquam iusto, omnis quam
@@ -51,6 +56,28 @@ const ProPage = () => {
         architecto autem repellendus, ea a est exercitationem dolores
         perspiciatis possimus?
       </P>
+
+      <Table
+        data={data}
+        column={[
+          { key: "country", label: "Country", format: (v) => v.toLowerCase() },
+          { key: "team", label: "Team" },
+          { key: "name", label: "Name" },
+          { key: "scopeSensitivity", label: "Scope Sensitivity" },
+          { key: "mouseSensitivity", label: "In Game Sensitivity" },
+          { key: "dpi", label: "DPI" },
+          { key: "edpi", label: "eDPI" },
+          { key: "gpu", label: "GPU" },
+          { key: "headset", label: "Headset" },
+          { key: "keyboard", label: "Keyboard" },
+          { key: "monitor", label: "Monitor" },
+          { key: "monitorRefreshRate", label: "Monitor Refresh Rate" },
+          { key: "mouse", label: "Mouse" },
+          { key: "mousePollingRate", label: "Mouse Polling Rate" },
+          { key: "mousepad", label: "Mousepad" },
+          { key: "resolution", label: "Resolution" },
+        ]}
+      />
     </>
   );
 };

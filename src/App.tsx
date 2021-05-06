@@ -117,7 +117,7 @@ const App = () => {
         />
         <PageContainer className="page-container">
           <Switch>
-            <Route path="/pro" component={ProPage} />
+            <Route path="/pros" component={ProPage} />
             <Route path="/cc" component={CrosshairCreator} />
           </Switch>
         </PageContainer>
