@@ -1,17 +1,87 @@
 import styled from "@emotion/styled";
 import SidebarPortal from "../components/SidebarPortal";
-import { useState } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 import Table from "../components/Table";
-
 import DATA from "../data.json";
+import useRenderCount from "../hooks/useRenderCount";
 
 const P = styled.p`
   margin: 1rem;
 `;
 
 const ProPage = () => {
-  const [data, setData] = useState<object[]>(DATA);
+  // const [data, setData] = useState<object[]>(DATA.slice(0, 20));
+
+  const [data, setData] = useState(DATA);
+  const column = useMemo(
+    () => [
+      {
+        key: "country",
+        label: "Country",
+        width: 100,
+      },
+      { key: "team", label: "Team", width: 100 },
+      { key: "name", label: "Name", width: 100 },
+      {
+        key: "scopeSensitivity",
+        label: "Scope Sensitivity",
+        width: 70,
+        abbr: "Scope",
+        format: (data: number) => data.toFixed(2),
+      },
+      {
+        key: "mouseSensitivity",
+        label: "In Game Sensitivity",
+        width: 70,
+        abbr: "Sens.",
+        format: (data: number) => data.toFixed(2),
+      },
+      { key: "dpi", label: "DPI", width: 60 },
+
+      {
+        key: "edpi",
+        label: "eDPI",
+        width: 60,
+        format: (data: number) => Math.round(data),
+      },
+      { key: "gpu", label: "GPU", width: 120 },
+      { key: "headset", label: "Headset" },
+      { key: "keyboard", label: "Keyboard" },
+      { key: "monitor", label: "Monitor" },
+      {
+        key: "monitorRefreshRate",
+        label: "Monitor Refresh Rate",
+        width: 70,
+        abbr: "Hz",
+      },
+      { key: "mouse", label: "Mouse" },
+      {
+        key: "mousePollingRate",
+        label: "Mouse Polling Rate",
+        width: 80,
+
+        abbr: "Poll Rate",
+      },
+      { key: "mousepad", label: "Mousepad" },
+      { key: "resolution", label: "Resolution", width: 100 },
+    ],
+    []
+  );
+
+  const renderCount = useRenderCount();
+
+  useEffect(() => {
+    console.log("ProPage.tsx: data");
+  }, [data]);
+
+  useEffect(() => {
+    console.log("ProPage.tsx: column");
+  }, [column]);
+
+  useEffect(() => {
+    console.log("ProPage.tsx rendered", renderCount);
+  });
 
   return (
     <>
@@ -57,27 +127,7 @@ const ProPage = () => {
         perspiciatis possimus?
       </P>
 
-      <Table
-        data={data}
-        column={[
-          { key: "country", label: "Country", format: (v) => v.toLowerCase() },
-          { key: "team", label: "Team" },
-          { key: "name", label: "Name" },
-          { key: "scopeSensitivity", label: "Scope Sensitivity" },
-          { key: "mouseSensitivity", label: "In Game Sensitivity" },
-          { key: "dpi", label: "DPI" },
-          { key: "edpi", label: "eDPI" },
-          { key: "gpu", label: "GPU" },
-          { key: "headset", label: "Headset" },
-          { key: "keyboard", label: "Keyboard" },
-          { key: "monitor", label: "Monitor" },
-          { key: "monitorRefreshRate", label: "Monitor Refresh Rate" },
-          { key: "mouse", label: "Mouse" },
-          { key: "mousePollingRate", label: "Mouse Polling Rate" },
-          { key: "mousepad", label: "Mousepad" },
-          { key: "resolution", label: "Resolution" },
-        ]}
-      />
+      <Table data={data} column={column} />
     </>
   );
 };

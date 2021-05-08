@@ -1,20 +1,37 @@
 // styling:
 import { css, Theme } from "@emotion/react";
 import styled from "@emotion/styled";
-import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, AnimateSharedLayout, motion } from "framer-motion";
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Debug from "./Debug";
 
 // icons:
-import { RiArrowDropDownLine } from "react-icons/ri";
+import { RiArrowDropDownLine, RiArrowDownCircleFill } from "react-icons/ri";
 import { MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
-import useTable, { TableProps } from "../hooks/useTable";
+import { IoCaretDownCircle } from "react-icons/io5";
+import { HiChevronDoubleDown } from "react-icons/hi";
+import { BiChevronsDown, BiCaretDown, BiCaretDownCircle } from "react-icons/bi";
+import useTable, { Column, TableProps } from "../hooks/useTable";
+import useRenderCount from "../hooks/useRenderCount";
+import useResizeObserver from "use-resize-observer/polyfilled";
+import { table } from "node:console";
 
 const Container = styled.div`
+  /* border: 1px solid yellow; */
   position: relative;
+  /* overflow: auto; */
 `;
 
 const TableContainer = styled.table`
+  min-width: 100%;
+  /* border: 2px solid orange; */
   position: absolute;
   top: 0;
 
@@ -22,27 +39,96 @@ const TableContainer = styled.table`
 
   display: flex;
   flex-direction: column;
+
+  background-color: ${({ theme }) => theme.colors.onBackground.main};
 `;
 
 const Thead = styled.thead`
-  display: flex;
-  flex-direction: column;
   position: sticky;
   top: 0;
   z-index: 100;
+
+  border-bottom: 1px solid ${({ theme }) => theme.colors.onSurface.main};
+
+  background-color: ${({ theme }) => theme.colors.onBackground.main};
+  opacity: 0.94;
+  backdrop-filter: blur(2px);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 `;
 
 const Tbody = styled.tbody`
+  position: relative;
   display: flex;
   flex-direction: column;
+  align-items: center;
+
+  /* background-color: ${({ theme }) => theme.colors.onBackground.main}; */
+
+  ${({ tableHeight }: { tableHeight: number }) => css`
+    height: ${tableHeight}px;
+    min-height: ${tableHeight}px;
+    max-height: ${tableHeight}px;
+  `}
 
   /* margin: 0 1rem; */
 
-  tr:nth-of-type(2n + 1) {
-    background-color: ${({ theme }) => theme.colors.onSurface.main};
+  tr {
+    /* position: relative; */
+    border-bottom: 1px solid ${({ theme }) => theme.colors.onSurface.main};
+
+    padding: 0 1rem;
+    height: 3rem;
+
+    display: flex;
+
+    td {
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+
+      height: 100%;
+      padding: 0 1rem;
+
+      cursor: default;
+
+      color: ${({ theme }) => theme.colors.background.main};
+      font-size: 0.9rem;
+
+      display: flex;
+      align-items: center;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
-  tr:nth-of-type(2n) {
-    background-color: ${({ theme }) => theme.colors.onBackground.main};
+
+  tr:nth-of-type(odd) {
+    /* background-color: ${({ theme }) => theme.colors.onSurface.main}; */
+  }
+
+  tr:nth-of-type(even) {
+    /* background-color: ${({ theme }) => theme.colors.onBackground.main}; */
+  }
+
+  tr {
+    /* background-color: ${({ theme }) => theme.colors.onBackground.main}; */
+  }
+
+  tr:hover {
+    /* box-shadow: inset 0px 0px 0px 1px */
+    background-color: ${({ theme }) => theme.colors.primary.main};
+    border-radius: 5px;
+    td {
+      color: ${({ theme }) => theme.colors.onPrimary.main};
+      /* background-color: transparent; */
+      font-weight: 600;
+    }
+    /* background-color: transparent; */
   }
 `;
 
@@ -50,14 +136,13 @@ const HeaderRow = styled.tr`
   padding: 0 1rem;
   height: 5rem;
 
-  border-bottom: 1px solid ${({ theme }) => theme.colors.onSurface.main};
-
   background-color: ${({ theme }) => theme.colors.onBackground.main};
+  background-color: transparent;
+
   display: flex;
 `;
 
 const HeaderColumn = styled.th`
-  position: relative;
   ${({ columnWidth }: { columnWidth: number }) =>
     css`
       width: ${columnWidth}px;
@@ -65,148 +150,323 @@ const HeaderColumn = styled.th`
       max-width: ${columnWidth}px;
     `}
 
+  cursor: default;
+  user-select: none;
+  position: relative;
+
   white-space: nowrap;
+  /* word-break: break-word; */
 
   height: 100%;
   padding: 0 1rem;
-
-  cursor: default;
+  font-size: 12px;
+  font-weight: 600;
 
   color: ${({ theme }) => theme.colors.surface.main};
 
   display: flex;
   align-items: center;
 
-  svg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    path {
-      fill: ${({ theme }) => theme.colors.primary.main};
-    }
-  }
-
-  p {
-    position: absolute;
-    top: 0;
-    left: 0;
-    color: ${({ theme }) => theme.colors.primary.main};
-  }
-`;
-
-const borderRadius = 5;
-
-const Row = styled(motion.tr)`
-  padding: 0 1rem;
-  height: 3rem;
-
-  /* padding: 1rem 2rem; */
-  /* margin: 0.5rem 0; */
-  /* border-radius: 5px; */
-  /* background-color: ${({ theme }) => theme.colors.surface.main}; */
-
-  /* box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.1); */
-
-  /* overflow: hidden; */
-  display: flex;
-  /* align-items: center; */
-
   &:hover {
-    /* box-shadow: inset 0px 0px 0px 1px
-      ${({ theme }) => theme.colors.onBackground.main}; */
+    /* background-color: red; */
+    text-decoration: underline;
   }
 `;
 
-const Column = styled.td`
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+// transform: translateY(${({ tHeight }: { tHeight: number }) => tHeight}px);
+const Row = styled(motion.tr)`
+  position: absolute;
+  top: ${({ tHeight }: { tHeight: number }) => tHeight}px;
 
-  height: 100%;
-  padding: 0 1rem;
+  transition: top 1000ms linear;
+`;
 
-  cursor: default;
+const BlankRow = styled.tr`
+  ${({ blankHeight }: { blankHeight: number }) => css`
+    height: ${blankHeight}px;
+    min-height: ${blankHeight}px;
+    max-height: ${blankHeight}px;
+  `}
+`;
 
-  color: ${({ theme }) => theme.colors.background.main};
-  font-size: 0.9rem;
+const ZeroHeightRow = styled.tr`
+  height: 0px;
+  max-height: 0px;
+  min-height: 0px;
+`;
 
+const DataColumn = styled.td`
   ${({ columnWidth }: { columnWidth: number }) =>
     css`
       width: ${columnWidth}px;
       min-width: ${columnWidth}px;
       max-width: ${columnWidth}px;
     `}
+`;
 
-  display: flex;
-  align-items: center;
+const TooltipContainer = styled(motion.div)`
+  /* opacity: 0.5; */
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* left: -0.5rem; */
+  padding: 2px;
+  z-index: 10;
+  /* padding-left: 0; */
 
-  &:hover {
-    text-decoration: underline;
-    overflow: visible;
+  /* text-decoration: underline; */
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  background-color: ${({ theme }) => theme.colors.primary.main};
+  border: 1px solid white;
+  border-radius: 3px;
+
+  opacity: 0;
+`;
+
+const indicatorIconSize = 16;
+
+type SortIndicatorProps = {
+  orderType: string;
+};
+
+const SortIndicator = styled(motion.span)<SortIndicatorProps>`
+  width: ${indicatorIconSize}px;
+  height: ${indicatorIconSize}px;
+  min-width: ${indicatorIconSize}px;
+  min-height: ${indicatorIconSize}px;
+  max-width: ${indicatorIconSize}px;
+  max-height: ${indicatorIconSize}px;
+  margin-left: 3px;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    /* position: absolute; */
+    /* top: 0; */
+    /* left: 0; */
+    path {
+      transition: 100ms fill linear;
+      fill: ${({ orderType, theme }) =>
+        orderType === "ascend"
+          ? theme.colors.correct.main
+          : theme.colors.error.light};
+    }
   }
 `;
 
-const Table = ({ data, column }: TableProps) => {
+const BlankBigTable = styled.tbody`
+  width: 1708px;
+  min-width: 1708px;
+  max-width: 1708px;
+
+  height: 9100px;
+  min-height: 9100px;
+  max-height: 9100px;
+
+  background-color: pink;
+
+  display: flex;
+`;
+
+interface RowItemProps {
+  // cKey: string;
+  data: any;
+  columnAttrs: Column[];
+  index: number;
+}
+
+interface DataPieceProps {
+  // rowData: any;
+  columnData: Column;
+  text: any;
+}
+
+const DataPiece = memo(({ columnData, text }: DataPieceProps) => {
+  return (
+    <DataColumn title={text} columnWidth={columnData.width}>
+      {text}
+    </DataColumn>
+  );
+});
+
+const RowItem = memo(({ data, columnAttrs, index }: RowItemProps) => {
+  return (
+    <tr>
+      {/* <Row style={{ position: "absolute", top: `${index * 14 * 3}px` }}> */}
+      {columnAttrs.map((columnData: Column, j: number) => (
+        <DataPiece
+          key={`body-column-${data.name}-${columnData.key}`}
+          columnData={columnData}
+          text={
+            columnData.format
+              ? columnData.format(data[columnData.key])
+              : data[columnData.key]
+          }
+        ></DataPiece>
+      ))}
+    </tr>
+  );
+});
+
+const Table = memo(({ data, column }: TableProps) => {
   const {
     changeColumnOrder,
     toggleMultiSort,
     toggleSort,
+    toggleShiftSort,
     columnAttrs,
     tableData,
     shiftHeld,
-    shiftSort,
+    sorts,
   } = useTable(data, column, 150);
+
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+  const scrollRef = useRef(document.getElementById("root"));
+  const { width = 0, height = 0 } = useResizeObserver({ ref: scrollRef });
+  const [extraContentHeight, setExtraContentHeight] = useState(0);
+  // const tableDimensions = useResizeObserver({ ref: scrollRef });
+
+  // 14 comes from theme.dimensions.unit or 1rem
+  const itemHeight = 14 * 3; // 3rem
+
+  const listHeight = itemHeight * tableData.length;
+
+  const startIndex = Math.max(
+    0, // ensures that we get an index of atleast 0
+    Math.floor((scrollPosition - extraContentHeight) / itemHeight)
+  );
+
+  const endIndex = Math.max(
+    0, //  ensures that we get atleast an index of 0 in the case that:
+    // scrollTop + height < extraContentHeight
+    Math.min(
+      tableData.length - 1, // don't render past the end of the list
+      Math.floor((scrollPosition + height - extraContentHeight) / itemHeight)
+    )
+  );
+
+  const sortIndicatorVariant = useMemo(
+    () => ({
+      descend: {
+        rotate: 0,
+        scale: 1,
+      },
+      ascend: {
+        rotate: 180,
+        scale: 1,
+      },
+
+      none: {
+        // rotate: 0,
+        // scale: 0,
+        rotate: [180, 360, 360, 360],
+        scale: [1, 1, 0, 0],
+      },
+    }),
+    []
+  );
+
+  useEffect(() => {
+    scrollRef.current = document.getElementById("page-container");
+    const setScrollTopRef = () =>
+      setScrollPosition(scrollRef.current?.scrollTop as number);
+
+    scrollRef.current?.addEventListener("scroll", setScrollTopRef);
+
+    return () => {
+      scrollRef.current?.removeEventListener("scroll", setScrollTopRef);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      const fullHeight = scrollRef.current.scrollHeight;
+      setExtraContentHeight(fullHeight - listHeight);
+    }
+  }, [height, width, listHeight]);
+
+  useEffect(() => {
+    console.log("column in Table.tsx changed");
+  }, [column]);
+  useEffect(() => {
+    console.log("data in Table.tsx changed");
+  }, [data]);
 
   return (
     <>
-      <Debug data={shiftHeld} />
-      <button onClick={() => changeColumnOrder("name", columnAttrs.length - 1)}>
-        slkdjflksdjf
-      </button>
-      {/* <Debug data={columnAttrs} /> */}
-      <Container>
-        <TableContainer
-        // onMouseLeave={() => setColumnHighlight("")}
-        >
+      <Debug
+        drag
+        data={{
+          scrollPosition: Math.round(scrollPosition),
+          startIndex,
+          endIndex,
+          itemsShown: endIndex - startIndex + 1,
+          windowHeight: height,
+          windowWidth: width,
+          listHeight: listHeight,
+          extraContentHeight,
+        }}
+      />
+
+      <Container className="Table-Container">
+        <TableContainer>
           <Thead>
-            {/* <Div></Div> */}
             <HeaderRow>
-              {columnAttrs.map(
-                ({ key, label, width, format, sorted }, i: number) => (
-                  <HeaderColumn
-                    // highlight={key === columnHighlight}
-                    key={`header-column-${i}`}
-                    columnWidth={width}
-                    // onMouseEnter={(e) => setColumnHighlight(key)}
-                    onClick={() => shiftSort(key)}
-                  >
-                    {label}
-                    {sorted === "ascend" && <MdKeyboardArrowUp />}
-                    {sorted === "descend" && <MdKeyboardArrowDown />}
-                  </HeaderColumn>
-                )
-              )}
+              <AnimatePresence>
+                {columnAttrs.map(
+                  ({ key, label, width, format, sorted, abbr }, i: number) => (
+                    <HeaderColumn
+                      key={`header-column-${i}`}
+                      columnWidth={width}
+                      onClick={() => toggleShiftSort(key)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        toggleMultiSort(key);
+                      }}
+                    >
+                      {abbr ? abbr : label}
+
+                      <SortIndicator
+                        orderType={sorted}
+                        variants={sortIndicatorVariant}
+                        initial={sorted}
+                        animate={sorted}
+                      >
+                        <BiCaretDownCircle />
+                      </SortIndicator>
+                    </HeaderColumn>
+                  )
+                )}
+              </AnimatePresence>
             </HeaderRow>
           </Thead>
-          <Tbody>
-            {tableData.map((row: any, i: number) => (
-              <Row key={`body-row-${i}`}>
-                {columnAttrs.map(({ key, label, width, format }, j: number) => (
-                  <Column
-                    columnWidth={width}
-                    key={`body-column-${i}-${j}`}
-                    // onMouseEnter={(e) => setColumnHighlight(key)}
-                  >
-                    {format ? format(row[key]) : row[key]}
-                  </Column>
-                ))}
-              </Row>
-            ))}
+          <Tbody tableHeight={listHeight}>
+            {/* <ZeroHeightRow /> */}
+            <BlankRow blankHeight={startIndex * itemHeight} />
+            {tableData.map((row: any, i: number) => {
+              if (i >= startIndex && i <= endIndex)
+                return (
+                  <RowItem
+                    key={`data-row-${row.name}`}
+                    // ckey={`body-row-${i}`}
+                    columnAttrs={columnAttrs}
+                    data={tableData[i]}
+                    index={i}
+                  />
+                );
+              // else return <tr key={`data-row-${row.name}`} />;
+            })}
+            <BlankRow
+              blankHeight={(tableData.length - (endIndex + 1)) * itemHeight}
+            />
           </Tbody>
         </TableContainer>
       </Container>
     </>
   );
-};
+});
 
 export default Table;

@@ -76,7 +76,10 @@ export const darkTheme: Theme = {
     onBackground: ccs({ main: "#ffffff" }),
     onSurface: ccs({ main: "#f6f6f6" }),
 
-    error: ccs({ main: "#ff6b6b" }),
+    // error: ccs({ main: "#ff6b6b" }),
+    // error: ccs({ main: "#ff6b6b", light: "#fd3131" }),
+    error: ccs({ main: "#ff5b5b", light: "#fd5050" }),
+
     correct: ccs({ main: "#37d7b2" }),
     warning: ccs({ main: "#fee257" }),
   },
@@ -100,7 +103,11 @@ export const lightTheme: Theme = {
     onBackground: ccs({ main: "#363f49" }),
     onSurface: ccs({ main: "#2c333b" }),
 
-    error: ccs({ main: "#ff6b6b" }),
+    // error: ccs({ main: "#ff6b6b" }),
+    // error: ccs({ main: "#ff6b6b", light: "#fd3131" }),
+    // error: ccs({ main: "#fd3131", light: "#ff6b6b" }),
+    error: ccs({ main: "#fd3131", light: "#ff5b5b" }),
+
     correct: ccs({ main: "#37d7b2" }),
     warning: ccs({ main: "#fee257" }),
   },

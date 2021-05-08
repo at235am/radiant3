@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { EmptyStatement } from "typescript";
 
 export type OrderType = "ascend" | "descend" | "none";
 
@@ -14,12 +13,17 @@ export interface Column {
   width: number;
   format: ((value: any) => any) | null;
   sorted: OrderType;
+  abbr: string;
 }
 
 export type ColumnProps = Partial<Column> & Pick<Column, "key">;
 
+export interface InputData<Type> {
+  [key: string]: Type;
+}
+
 export type TableProps = {
-  data: object[];
+  data: InputData<unknown>[];
   column: ColumnProps[];
   defaultColumnWidth?: number;
 };
@@ -41,21 +45,22 @@ const sortFn = (sortType: SortType) => {
 };
 
 const useTable = (
-  data: object[],
+  data: InputData<unknown>[],
   column: ColumnProps[],
   defaultColumnWidth = 150
 ) => {
   const addDefaultValues = useCallback(
     (objs: ColumnProps[]): Column[] => {
       const columns: Column[] = objs.map(
-        ({ key, label, width, format }, i: number) => ({
+        ({ key, label, width, format, abbr }, i: number) => ({
           key,
           label: label ? label : key,
           width: width ? width : defaultColumnWidth,
           format: format ? format : null,
           sorted: "none",
+          abbr: abbr ? abbr : "",
         })
-      );
+      ) as Column[];
 
       return columns;
     },

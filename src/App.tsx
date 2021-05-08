@@ -6,16 +6,16 @@ import styled from "@emotion/styled";
 import { BrowserRouter, Switch, Route, Redirect, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Debug from "./components/Debug";
-import { useMediaQuery } from "react-responsive";
 
 import { useThemeState } from "./contexts/ThemeContext";
 import ThemePreview from "./util/Themes";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ProPage from "./pages/ProPage";
 import CrosshairCreator from "./pages/CrosshairCreator";
 import NavigationBar from "./components/NavigationBar";
 import { useUIState } from "./contexts/UIContext";
+import useRenderCount from "./hooks/useRenderCount";
 
 const AppContainer = styled.div`
   /* border: 3px solid pink; */
@@ -28,13 +28,40 @@ const AppContainer = styled.div`
     flex-direction: column;
   }
 `;
-const SidebarPortalLocation = styled(motion.div)`
+
+type SidebarPortalProps = {
+  sidebarState: boolean;
+};
+const SidebarPortalLocation = styled(motion.div)<SidebarPortalProps>`
   /* border: 1px solid yellow; */
+  position: relative;
   overflow: hidden;
+
+  @media (max-width: 550px) {
+    overflow-y: auto;
+    ${({ theme, sidebarState }) =>
+      sidebarState
+        ? css`
+            border-bottom: 1rem solid ${theme.colors.surface.main};
+            border-top: 1rem solid ${theme.colors.surface.main};
+          `
+        : null}
+  }
   background-color: ${({ theme }) => theme.colors.surface.main};
 `;
 
+const Spacing = styled.div`
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 1rem;
+  min-height: 1rem;
+  max-height: 1rem;
+  background-color: red;
+`;
+
 const PageContainer = styled.div`
+  /* border: 2px solid pink; */
   overflow: auto;
   flex: 1;
 
@@ -43,6 +70,7 @@ const PageContainer = styled.div`
 `;
 
 const App = () => {
+  const renderCount = useRenderCount();
   const theme = useTheme();
   const {
     currentTheme,
@@ -101,11 +129,15 @@ const App = () => {
     },
   };
 
+  useEffect(() => {
+    console.log("App.tsx rendered", renderCount);
+  });
+
   return (
     <AppContainer>
       <Helmet>
         <meta name="theme-color" content={theme.colors.background.main} />
-        <title>{theme.colors.background.main}</title>
+        {/* <title>{theme.colors.background.main}</title> */}
       </Helmet>
       <BrowserRouter>
         <NavigationBar />
@@ -114,8 +146,11 @@ const App = () => {
           variants={isMobile ? verticalVariant : horizontalVariant}
           initial={sidebarState ? "open" : "closed"}
           animate={sidebarState ? "open" : "closed"}
-        />
-        <PageContainer className="page-container">
+          sidebarState={sidebarState}
+        >
+          {/* {isMobile && <Spacing />} */}
+        </SidebarPortalLocation>
+        <PageContainer className="page-container" id="page-container">
           <Switch>
             <Route path="/pros" component={ProPage} />
             <Route path="/cc" component={CrosshairCreator} />
