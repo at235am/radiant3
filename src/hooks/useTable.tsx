@@ -67,6 +67,9 @@ const useTable = (
     [defaultColumnWidth]
   );
 
+  const [originalData, setOriginalData] = useState(data);
+  const [filter, setFilter] = useState("");
+
   const [columnAttrs, setColumnAttrs] = useState(addDefaultValues(column));
   const [tableData, setTableData] = useState(data);
   const [sorts, setSorts] = useState<SortType[] | []>([]);
@@ -194,6 +197,41 @@ const useTable = (
     else toggleSort(key);
   };
 
+  const filterData = (value: string) => {
+    setFilter(value);
+  };
+
+  const applySorts = (sorts: SortType[], data: InputData<unknown>[]) => {
+    sorts.forEach((sortType) => {
+      const sortFunction = sortFn(sortType);
+      data.sort(sortFunction);
+    });
+  };
+
+  const applyFilter = (keyword: string, data: InputData<unknown>[]) => {
+    keyword = keyword.toLowerCase();
+    return data.filter((values) => {
+      if (keyword === "") return true;
+      // console.log("values", values);
+      const stuffs = Object.values(values);
+      let has = false;
+
+      stuffs.forEach((v: any) => {
+        if (typeof v === "number") {
+          v = v.toString();
+        }
+        // console.log(`${v} includes ${value}`, v.includes(value));
+
+        if (v.toLowerCase().includes(keyword)) {
+          has = true;
+          return true;
+        }
+      });
+
+      return has;
+    });
+  };
+
   useEffect(() => {
     const setShiftHeldValue = (e: KeyboardEvent, value: boolean) => {
       if (e.key === "Shift") setShiftHeld(value);
@@ -220,15 +258,12 @@ const useTable = (
   }, [column, addDefaultValues]);
 
   useEffect(() => {
-    let copyOfOriginalData = [...data];
+    const filteredData = applyFilter(filter, data);
 
-    sorts.forEach((sortType) => {
-      const sortFunction = sortFn(sortType);
-      copyOfOriginalData.sort(sortFunction);
-    });
+    applySorts(sorts, filteredData);
 
-    setTableData(copyOfOriginalData);
-  }, [sorts, data]);
+    setTableData(filteredData);
+  }, [sorts, data, filter]);
 
   return {
     columnAttrs,
@@ -242,6 +277,7 @@ const useTable = (
     toggleSort,
     toggleShiftSort,
     shiftHeld,
+    filterData,
   };
 };
 

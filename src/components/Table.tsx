@@ -13,15 +13,12 @@ import React, {
 import Debug from "./Debug";
 
 // icons:
-import { RiArrowDropDownLine, RiArrowDownCircleFill } from "react-icons/ri";
-import { MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
-import { IoCaretDownCircle } from "react-icons/io5";
-import { HiChevronDoubleDown } from "react-icons/hi";
-import { BiChevronsDown, BiCaretDown, BiCaretDownCircle } from "react-icons/bi";
+import { BiCaretDownCircle } from "react-icons/bi";
 import useTable, { Column, TableProps } from "../hooks/useTable";
 import useRenderCount from "../hooks/useRenderCount";
 import useResizeObserver from "use-resize-observer/polyfilled";
 import { table } from "node:console";
+import SearchBar from "./TableSearchBar";
 
 const Container = styled.div`
   /* border: 1px solid yellow; */
@@ -48,7 +45,7 @@ const Thead = styled.thead`
   top: 0;
   z-index: 100;
 
-  border-bottom: 1px solid ${({ theme }) => theme.colors.onSurface.main};
+  /* border-bottom: 1px solid ${({ theme }) => theme.colors.onSurface.main}; */
 
   background-color: ${({ theme }) => theme.colors.onBackground.main};
   opacity: 0.94;
@@ -77,7 +74,7 @@ const Tbody = styled.tbody`
 
   tr {
     /* position: relative; */
-    border-bottom: 1px solid ${({ theme }) => theme.colors.onSurface.main};
+    border-top: 1px solid ${({ theme }) => theme.colors.onSurface.main};
 
     padding: 0 1rem;
     height: 3rem;
@@ -320,10 +317,12 @@ const Table = memo(({ data, column }: TableProps) => {
     tableData,
     shiftHeld,
     sorts,
+    filterData,
   } = useTable(data, column, 150);
 
-  const [scrollPosition, setScrollPosition] = useState(0);
+  const [searchText, setSearchText] = useState("");
 
+  const [scrollPosition, setScrollPosition] = useState(0);
   const scrollRef = useRef(document.getElementById("root"));
   const { width = 0, height = 0 } = useResizeObserver({ ref: scrollRef });
   const [extraContentHeight, setExtraContentHeight] = useState(0);
@@ -391,13 +390,18 @@ const Table = memo(({ data, column }: TableProps) => {
   useEffect(() => {
     console.log("column in Table.tsx changed");
   }, [column]);
+
   useEffect(() => {
     console.log("data in Table.tsx changed");
   }, [data]);
 
+  useEffect(() => {
+    filterData(searchText);
+  }, [searchText]);
+
   return (
     <>
-      <Debug
+      {/* <Debug
         drag
         data={{
           scrollPosition: Math.round(scrollPosition),
@@ -409,8 +413,15 @@ const Table = memo(({ data, column }: TableProps) => {
           listHeight: listHeight,
           extraContentHeight,
         }}
+      /> */}
+      <SearchBar
+        value={searchText}
+        onChange={(e: any) => setSearchText(e.target.value)}
+        placeholderText="Look for your favorite player, team, mouse, and more!"
+        results={`${tableData.length} result${
+          tableData.length === 1 ? "" : "s"
+        }`}
       />
-
       <Container className="Table-Container">
         <TableContainer>
           <Thead>

@@ -11,7 +11,7 @@ const P = styled.p`
 `;
 
 const ProPage = () => {
-  // const [data, setData] = useState<object[]>(DATA.slice(0, 20));
+  // const [data, setData] = useState(DATA.slice(0, 20));
 
   const [data, setData] = useState(DATA);
   const column = useMemo(
