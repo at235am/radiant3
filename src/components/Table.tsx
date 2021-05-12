@@ -17,22 +17,22 @@ import { BiCaretDownCircle } from "react-icons/bi";
 import useTable, { Column, TableProps } from "../hooks/useTable";
 import useRenderCount from "../hooks/useRenderCount";
 import useResizeObserver from "use-resize-observer/polyfilled";
-import { table } from "node:console";
 import SearchBar from "./TableSearchBar";
+import SidebarPortal from "./SidebarPortal";
 
 const Container = styled.div`
   /* border: 1px solid yellow; */
   position: relative;
-  /* overflow: auto; */
 `;
 
 const TableContainer = styled.table`
-  min-width: 100%;
   /* border: 2px solid orange; */
+
+  min-width: 100%;
   position: absolute;
   top: 0;
 
-  text-align: left;
+  /* text-align: left; */
 
   display: flex;
   flex-direction: column;
@@ -70,8 +70,6 @@ const Tbody = styled.tbody`
     max-height: ${tableHeight}px;
   `}
 
-  /* margin: 0 1rem; */
-
   tr {
     /* position: relative; */
     border-top: 1px solid ${({ theme }) => theme.colors.onSurface.main};
@@ -88,7 +86,7 @@ const Tbody = styled.tbody`
       text-overflow: ellipsis;
 
       height: 100%;
-      padding: 0 1rem;
+      /* padding: 0 1rem; */
 
       cursor: default;
 
@@ -104,28 +102,14 @@ const Tbody = styled.tbody`
     }
   }
 
-  tr:nth-of-type(odd) {
-    /* background-color: ${({ theme }) => theme.colors.onSurface.main}; */
-  }
-
-  tr:nth-of-type(even) {
-    /* background-color: ${({ theme }) => theme.colors.onBackground.main}; */
-  }
-
-  tr {
-    /* background-color: ${({ theme }) => theme.colors.onBackground.main}; */
-  }
-
   tr:hover {
-    /* box-shadow: inset 0px 0px 0px 1px */
     background-color: ${({ theme }) => theme.colors.primary.main};
     border-radius: 5px;
     td {
       color: ${({ theme }) => theme.colors.onPrimary.main};
-      /* background-color: transparent; */
+
       font-weight: 600;
     }
-    /* background-color: transparent; */
   }
 `;
 
@@ -133,49 +117,33 @@ const HeaderRow = styled.tr`
   padding: 0 1rem;
   height: 5rem;
 
-  background-color: ${({ theme }) => theme.colors.onBackground.main};
   background-color: transparent;
 
   display: flex;
 `;
 
-const HeaderColumn = styled.th`
-  ${({ columnWidth }: { columnWidth: number }) =>
-    css`
-      width: ${columnWidth}px;
-      min-width: ${columnWidth}px;
-      max-width: ${columnWidth}px;
-    `}
+const HeaderColumn = styled(motion.th)`
+  position: relative;
+  overflow: hidden;
+
+  width: ${({ columnWidth }: { columnWidth: number }) => columnWidth}px;
+  height: 100%;
+  padding: 0 1rem;
 
   cursor: default;
   user-select: none;
-  position: relative;
-
   white-space: nowrap;
-  /* word-break: break-word; */
 
-  height: 100%;
-  padding: 0 1rem;
   font-size: 12px;
   font-weight: 600;
-
   color: ${({ theme }) => theme.colors.surface.main};
 
   display: flex;
   align-items: center;
 
   &:hover {
-    /* background-color: red; */
     text-decoration: underline;
   }
-`;
-
-// transform: translateY(${({ tHeight }: { tHeight: number }) => tHeight}px);
-const Row = styled(motion.tr)`
-  position: absolute;
-  top: ${({ tHeight }: { tHeight: number }) => tHeight}px;
-
-  transition: top 1000ms linear;
 `;
 
 const BlankRow = styled.tr`
@@ -186,40 +154,9 @@ const BlankRow = styled.tr`
   `}
 `;
 
-const ZeroHeightRow = styled.tr`
-  height: 0px;
-  max-height: 0px;
-  min-height: 0px;
-`;
-
-const DataColumn = styled.td`
-  ${({ columnWidth }: { columnWidth: number }) =>
-    css`
-      width: ${columnWidth}px;
-      min-width: ${columnWidth}px;
-      max-width: ${columnWidth}px;
-    `}
-`;
-
-const TooltipContainer = styled(motion.div)`
-  /* opacity: 0.5; */
-  position: absolute;
-  top: 0;
-  left: 0;
-  /* left: -0.5rem; */
-  padding: 2px;
-  z-index: 10;
-  /* padding-left: 0; */
-
-  /* text-decoration: underline; */
-  font-size: 0.9rem;
-  font-weight: 600;
-
-  background-color: ${({ theme }) => theme.colors.primary.main};
-  border: 1px solid white;
-  border-radius: 3px;
-
-  opacity: 0;
+const DataColumn = styled(motion.td)`
+  overflow: hidden;
+  width: ${({ columnWidth }: { columnWidth: number }) => columnWidth}px;
 `;
 
 const indicatorIconSize = 16;
@@ -253,56 +190,139 @@ const SortIndicator = styled(motion.span)<SortIndicatorProps>`
   }
 `;
 
-const BlankBigTable = styled.tbody`
-  width: 1708px;
-  min-width: 1708px;
-  max-width: 1708px;
+interface ColumnHeaderProps {
+  // rowData: any;
+  headerData: Column;
+  // text: any;
+  // width: number;
+  toggleShiftSort: (key: string) => void;
+  toggleMultiSort: (key: string) => void;
+}
 
-  height: 9100px;
-  min-height: 9100px;
-  max-height: 9100px;
+const ColumnHeader = memo(
+  ({ headerData, toggleShiftSort, toggleMultiSort }: ColumnHeaderProps) => {
+    // ({ headerData, toggleShiftSort, toggleMultiSort }: ColumnHeaderProps) => {
+    const { width, key, sorted, desc, format, label } = headerData;
+    const sortIndicatorVariant = useMemo(
+      () => ({
+        descend: {
+          rotate: 0,
+          scale: 1,
+        },
+        ascend: {
+          rotate: 180,
+          scale: 1,
+        },
 
-  background-color: pink;
+        none: {
+          // rotate: 0,
+          // scale: 0,
+          rotate: [180, 360, 360, 360],
+          scale: [1, 1, 0, 0],
+        },
+      }),
+      []
+    );
 
-  display: flex;
-`;
+    const toggleSort = useCallback(
+      () => toggleShiftSort(key),
+      [key, toggleShiftSort]
+    );
+    const toggleSortRightClick = useCallback(
+      (e) => {
+        e.preventDefault();
+        toggleMultiSort(key);
+      },
+      [key, toggleMultiSort]
+    );
 
+    useEffect(() => {
+      console.log("header data", headerData.key);
+    }, [headerData]);
+    useEffect(() => {
+      console.log("toggleShiftSort", headerData.key);
+    }, [toggleShiftSort]);
+    useEffect(() => {
+      console.log("toggleMultiSort", headerData.key);
+    }, [toggleMultiSort]);
+
+    return (
+      <HeaderColumn
+        columnWidth={width}
+        onClick={toggleSort}
+        onContextMenu={toggleSortRightClick}
+        initial={{
+          width,
+          paddingLeft: 14,
+          paddingRight: 14,
+        }}
+        animate={{
+          width,
+          paddingLeft: 14,
+          paddingRight: 14,
+        }}
+        exit={{ width: 0, paddingLeft: 0, paddingRight: 0 }}
+      >
+        {label ? label : key}
+
+        <SortIndicator
+          orderType={sorted}
+          variants={sortIndicatorVariant}
+          initial={sorted}
+          animate={sorted}
+        >
+          <BiCaretDownCircle />
+        </SortIndicator>
+      </HeaderColumn>
+    );
+  }
+);
+
+interface DataPieceProps {
+  columnData: Column;
+  data: any;
+}
+
+const DataPiece = memo(({ columnData, data }: DataPieceProps) => {
+  const { key, desc, label, sorted, width, format } = columnData;
+  const value = data[key];
+  return (
+    <DataColumn
+      title={value}
+      columnWidth={width}
+      initial={{
+        width,
+        paddingLeft: 14,
+        paddingRight: 14,
+      }}
+      animate={{
+        width,
+        paddingLeft: 14,
+        paddingRight: 14,
+      }}
+      exit={{ width: 0, paddingLeft: 0, paddingRight: 0 }}
+    >
+      {value}
+    </DataColumn>
+  );
+});
 interface RowItemProps {
-  // cKey: string;
   data: any;
   columnAttrs: Column[];
   index: number;
 }
-
-interface DataPieceProps {
-  // rowData: any;
-  columnData: Column;
-  text: any;
-}
-
-const DataPiece = memo(({ columnData, text }: DataPieceProps) => {
-  return (
-    <DataColumn title={text} columnWidth={columnData.width}>
-      {text}
-    </DataColumn>
-  );
-});
-
 const RowItem = memo(({ data, columnAttrs, index }: RowItemProps) => {
   return (
     <tr>
-      {/* <Row style={{ position: "absolute", top: `${index * 14 * 3}px` }}> */}
-      {columnAttrs.map((columnData: Column, j: number) => (
-        <DataPiece
-          key={`body-column-${data.name}-${columnData.key}`}
-          columnData={columnData}
-          text={
-            columnData.format
-              ? columnData.format(data[columnData.key])
-              : data[columnData.key]
-          }
-        ></DataPiece>
-      ))}
+      <AnimatePresence>
+        {columnAttrs.map((columnData: Column, j: number) => (
+          <DataPiece
+            key={`body-column-${data.name}-${columnData.key}`}
+            columnData={columnData}
+            data={data}
+          />
+        ))}
+      </AnimatePresence>
     </tr>
   );
 });
@@ -318,6 +338,8 @@ const Table = memo(({ data, column }: TableProps) => {
     shiftHeld,
     sorts,
     filterData,
+    toggleColumn,
+    hiddenColumns,
   } = useTable(data, column, 150);
 
   const [searchText, setSearchText] = useState("");
@@ -326,7 +348,6 @@ const Table = memo(({ data, column }: TableProps) => {
   const scrollRef = useRef(document.getElementById("root"));
   const { width = 0, height = 0 } = useResizeObserver({ ref: scrollRef });
   const [extraContentHeight, setExtraContentHeight] = useState(0);
-  // const tableDimensions = useResizeObserver({ ref: scrollRef });
 
   // 14 comes from theme.dimensions.unit or 1rem
   const itemHeight = 14 * 3; // 3rem
@@ -345,27 +366,6 @@ const Table = memo(({ data, column }: TableProps) => {
       tableData.length - 1, // don't render past the end of the list
       Math.floor((scrollPosition + height - extraContentHeight) / itemHeight)
     )
-  );
-
-  const sortIndicatorVariant = useMemo(
-    () => ({
-      descend: {
-        rotate: 0,
-        scale: 1,
-      },
-      ascend: {
-        rotate: 180,
-        scale: 1,
-      },
-
-      none: {
-        // rotate: 0,
-        // scale: 0,
-        rotate: [180, 360, 360, 360],
-        scale: [1, 1, 0, 0],
-      },
-    }),
-    []
   );
 
   useEffect(() => {
@@ -388,14 +388,6 @@ const Table = memo(({ data, column }: TableProps) => {
   }, [height, width, listHeight]);
 
   useEffect(() => {
-    console.log("column in Table.tsx changed");
-  }, [column]);
-
-  useEffect(() => {
-    console.log("data in Table.tsx changed");
-  }, [data]);
-
-  useEffect(() => {
     filterData(searchText);
   }, [searchText]);
 
@@ -414,6 +406,16 @@ const Table = memo(({ data, column }: TableProps) => {
           extraContentHeight,
         }}
       /> */}
+      {/* <Debug data={{ columnAttrs, sorts, hiddenColumns }} drag /> */}
+      <button onClick={() => changeColumnOrder("name", 0)}>
+        name to first
+      </button>
+      <button onClick={() => toggleShiftSort("team")}>sort team</button>
+      <button onClick={() => toggleColumn("name")}>toggle name</button>
+      <button onClick={() => toggleColumn("edpi")}>toggle edpi</button>
+
+      <SidebarPortal>sdfjlsdjflkjdsf</SidebarPortal>
+
       <SearchBar
         value={searchText}
         onChange={(e: any) => setSearchText(e.target.value)}
@@ -427,53 +429,45 @@ const Table = memo(({ data, column }: TableProps) => {
           <Thead>
             <HeaderRow>
               <AnimatePresence>
-                {columnAttrs.map(
-                  ({ key, label, width, format, sorted, abbr }, i: number) => (
-                    <HeaderColumn
-                      key={`header-column-${i}`}
-                      columnWidth={width}
-                      onClick={() => toggleShiftSort(key)}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        toggleMultiSort(key);
-                      }}
-                    >
-                      {abbr ? abbr : label}
-
-                      <SortIndicator
-                        orderType={sorted}
-                        variants={sortIndicatorVariant}
-                        initial={sorted}
-                        animate={sorted}
-                      >
-                        <BiCaretDownCircle />
-                      </SortIndicator>
-                    </HeaderColumn>
-                  )
-                )}
+                {columnAttrs.map((headerData, i: number) => (
+                  <ColumnHeader
+                    key={`header-column-${headerData.key}`}
+                    headerData={headerData}
+                    toggleShiftSort={toggleShiftSort}
+                    toggleMultiSort={toggleMultiSort}
+                  />
+                ))}
               </AnimatePresence>
             </HeaderRow>
           </Thead>
           <Tbody tableHeight={listHeight}>
-            {/* <ZeroHeightRow /> */}
             <BlankRow blankHeight={startIndex * itemHeight} />
+
             {tableData.map((row: any, i: number) => {
               if (i >= startIndex && i <= endIndex)
                 return (
                   <RowItem
                     key={`data-row-${row.name}`}
-                    // ckey={`body-row-${i}`}
                     columnAttrs={columnAttrs}
                     data={tableData[i]}
                     index={i}
                   />
                 );
-              // else return <tr key={`data-row-${row.name}`} />;
+              else return null;
             })}
-            <BlankRow
-              blankHeight={(tableData.length - (endIndex + 1)) * itemHeight}
-            />
           </Tbody>
+          {/* <Tbody tableHeight={listHeight}>
+            {tableData.map((row: any, i: number) => {
+              return (
+                <RowItem
+                  key={`data-row-${row.name}`}
+                  columnAttrs={columnAttrs}
+                  data={tableData[i]}
+                  index={i}
+                />
+              );
+            })}
+          </Tbody> */}
         </TableContainer>
       </Container>
     </>

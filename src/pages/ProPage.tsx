@@ -25,16 +25,16 @@ const ProPage = () => {
       { key: "name", label: "Name", width: 100 },
       {
         key: "scopeSensitivity",
-        label: "Scope Sensitivity",
+        label: "Scope",
         width: 70,
-        abbr: "Scope",
+        desc: "Scope",
         format: (data: number) => data.toFixed(2),
       },
       {
         key: "mouseSensitivity",
-        label: "In Game Sensitivity",
+        label: "Sens.",
         width: 70,
-        abbr: "Sens.",
+        desc: "Sens.",
         format: (data: number) => data.toFixed(2),
       },
       { key: "dpi", label: "DPI", width: 60 },
@@ -51,17 +51,16 @@ const ProPage = () => {
       { key: "monitor", label: "Monitor" },
       {
         key: "monitorRefreshRate",
-        label: "Monitor Refresh Rate",
+        label: "Hz",
         width: 70,
-        abbr: "Hz",
+        desc: "Hz",
       },
       { key: "mouse", label: "Mouse" },
       {
         key: "mousePollingRate",
-        label: "Mouse Polling Rate",
+        label: "Poll Rate",
         width: 80,
-
-        abbr: "Poll Rate",
+        desc: "Poll Rate",
       },
       { key: "mousepad", label: "Mousepad" },
       { key: "resolution", label: "Resolution", width: 100 },
@@ -85,7 +84,7 @@ const ProPage = () => {
 
   return (
     <>
-      <SidebarPortal>
+      {/* <SidebarPortal>
         <P>
           Lorem, ipsum dolor sit amet consectetur adipisicing elit. Nobis
           delectus, eligendi earum, sed dicta ut iste eos dolorem aspernatur
@@ -103,7 +102,7 @@ const ProPage = () => {
           impedit? Ab numquam quasi architecto, atque sequi praesentium
           voluptatibus quisquam nisi, fugit commodi, similique aspernatur?
         </P>
-      </SidebarPortal>
+      </SidebarPortal> */}
       <P>
         Lorem, ipsum dolor sit amet consectetur adipisicing elit. Nobis
         delectus, eligendi earum, sed dicta ut iste eos dolorem aspernatur alias

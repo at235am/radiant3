@@ -168,12 +168,6 @@ const WhyButton = styled.button`
   }
 `;
 
-const PlaceholderText = styled(motion.p)`
-  position: absolute;
-  left: 4rem;
-  color: red;
-`;
-
 const SearchNotice = styled.div`
   /* background-color: red; */
 

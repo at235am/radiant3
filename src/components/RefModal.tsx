@@ -189,7 +189,7 @@ const RefModal = ({
         stickToPin,
         tooltipPin
       ),
-    [parentRect, stickToPin, tooltipPin]
+    [parentRect, stickToPin, tooltipPin, tooltipDimensions]
   );
 
   useLayoutEffect(() => {

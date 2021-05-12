@@ -13,7 +13,7 @@ export interface Column {
   width: number;
   format: ((value: any) => any) | null;
   sorted: OrderType;
-  abbr: string;
+  desc: string;
 }
 
 export type ColumnProps = Partial<Column> & Pick<Column, "key">;
@@ -52,13 +52,13 @@ const useTable = (
   const addDefaultValues = useCallback(
     (objs: ColumnProps[]): Column[] => {
       const columns: Column[] = objs.map(
-        ({ key, label, width, format, abbr }, i: number) => ({
+        ({ key, label, width, format, desc }) => ({
           key,
           label: label ? label : key,
           width: width ? width : defaultColumnWidth,
           format: format ? format : null,
           sorted: "none",
-          abbr: abbr ? abbr : "",
+          desc: desc ? desc : "",
         })
       ) as Column[];
 
@@ -67,20 +67,43 @@ const useTable = (
     [defaultColumnWidth]
   );
 
-  const [originalData, setOriginalData] = useState(data);
+  // transformations to be done on original data:
   const [filter, setFilter] = useState("");
-
-  const [columnAttrs, setColumnAttrs] = useState(addDefaultValues(column));
-  const [tableData, setTableData] = useState(data);
   const [sorts, setSorts] = useState<SortType[] | []>([]);
+  const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
   const [shiftHeld, setShiftHeld] = useState(false);
-  // const [columnHighlight, setColumnHighlight] = useState("");
+
+  // normalized data (known as original data):
+  // represents the data with 0 transformations applied:
+  // never change ogColumnAttrs in a function; meant to be a copy of the original for referencing
+  // the only time it should change is if the prop 'column' has changed
+  const [normalizedColumn, setNormalizedColumn] = useState(
+    addDefaultValues(column)
+  );
+  const [normalizedData, setNormalizedData] = useState(data);
+
+  // represents the data that the user will get back (transformed data):
+  const [columnAttrs, setColumnAttrs] = useState(normalizedColumn);
+  const [tableData, setTableData] = useState(normalizedData);
+
+  const formatTableData = (data: any[], columnAttrs: Column[]) => {
+    return data.map((row) => {
+      const newRow = { ...row };
+      // const formattedRow = { ...row };
+      columnAttrs.forEach(({ key, format }) => {
+        if (format) newRow[key] = format(newRow[key]);
+      });
+
+      return newRow;
+    });
+  };
 
   const advanceSortType = (orderType: OrderType | undefined) => {
     if (orderType === "ascend") return "none";
     else if (orderType === "descend") return "ascend";
     else return "descend";
   };
+
   /**
    * Reorders the columns based on some inputs.
    * @param targetKey represents the key of the column that will move to the new position.
@@ -102,10 +125,26 @@ const useTable = (
       ...arrayWithDeletedTarget.slice(0, newPosition),
       targetColumn,
       ...arrayWithDeletedTarget.slice(
-        newPosition + 1,
+        newPosition,
         arrayWithDeletedTarget.length
       ),
     ]);
+  };
+
+  const showColumn = (key: string) => {
+    setHiddenColumns((keys) => [...new Set([...keys, key])]);
+  };
+
+  const hideColumn = (key: string) => {
+    setHiddenColumns((keys) => keys.filter((k) => k !== key));
+  };
+
+  const toggleColumn = (key: string) => {
+    setHiddenColumns((val) =>
+      val.includes(key)
+        ? val.filter((hiddenKey) => hiddenKey !== key)
+        : [...val, key]
+    );
   };
 
   /**
@@ -115,61 +154,36 @@ const useTable = (
    * @param key represents the key of the 'column' to sort.
    * @param reverse you can reverse the precedence of the sorts.
    */
-  const toggleMultiSort = (key: string, reverse = false) => {
-    const index = sorts.findIndex((item) => item.key === key);
+  const toggleMultiSort = useCallback((key: string, reverse = false) => {
+    setSorts((currSorts) => {
+      const index = currSorts.findIndex((sortType) => sortType.key === key);
 
-    // add a new sort:
-    if (index === -1) {
-      // note: the insertion of ...val affects the precedence of
-      setSorts((val) =>
-        reverse
-          ? [...val, { key, orderType: "descend" }]
-          : [{ key, orderType: "descend" }, ...val]
-      );
-
-      setColumnAttrs((cols) => {
-        return cols.map((col) =>
-          col.key === key ? { ...col, sorted: "descend" } : col
-        );
-      });
-    } else {
-      const prevSort = sorts[index];
-      // remove the prevSort:
-      if (prevSort.orderType === "ascend") {
-        setSorts((val) => [
-          ...val.slice(0, index),
-          ...val.slice(index + 1, val.length),
-        ]);
-        setColumnAttrs((cols) => {
-          return cols.map((col) =>
-            col.key === key ? { ...col, sorted: "none" } : col
-          );
-        });
-      }
-      // update the prevSort:
-      else {
-        setSorts((val) => [
-          ...val.slice(0, index),
-          {
-            ...prevSort,
-            orderType: "ascend",
-          },
-          ...val.slice(index + 1, val.length),
-        ]);
-        setColumnAttrs((cols) => {
-          return cols.map((col) =>
-            col.key === key ? { ...col, sorted: "ascend" } : col
-          );
-        });
-      }
-    }
-  };
+      if (index !== -1) {
+        const orderType = advanceSortType(currSorts[index].orderType);
+        return orderType === "none"
+          ? [
+              ...currSorts.slice(0, index),
+              ...currSorts.slice(index + 1, currSorts.length),
+            ]
+          : (currSorts.map((sort: SortType) =>
+              sort.key === key ? { key, orderType } : sort
+            ) as SortType[]);
+      } else return [{ key, orderType: "descend" }, ...currSorts];
+    });
+    // setColumnAttrs((currCols) => {
+    //   return currCols.map((col) =>
+    //     col.key === key
+    //       ? { ...col, sorted: advanceSortType(col.sorted) }
+    //       : { ...col, sorted: "none" }
+    //   );
+    // });
+  }, []);
 
   /**
    * Applies a sort based on only one column or key at a time.
    * @param key represents the key of the 'column' to sort.
    */
-  const toggleSort = (key: string) => {
+  const toggleSort = useCallback((key: string) => {
     setSorts((currSorts) => {
       const index = currSorts.findIndex((sortType) => sortType.key === key);
 
@@ -179,23 +193,26 @@ const useTable = (
       } else return [{ key, orderType: "descend" }];
     });
 
-    setColumnAttrs((currCols) => {
-      return currCols.map((col) =>
-        col.key === key
-          ? { ...col, sorted: advanceSortType(col.sorted) }
-          : { ...col, sorted: "none" }
-      );
-    });
-  };
+    // setColumnAttrs((currCols) => {
+    //   return currCols.map((col) =>
+    //     col.key === key
+    //       ? { ...col, sorted: advanceSortType(col.sorted) }
+    //       : { ...col, sorted: "none" }
+    //   );
+    // });
+  }, []);
 
   /**
    *
    * @param key represents the key of the 'column' to sort
    */
-  const toggleShiftSort = (key: string) => {
-    if (shiftHeld) toggleMultiSort(key);
-    else toggleSort(key);
-  };
+  const toggleShiftSort = useCallback(
+    (key: string) => {
+      if (shiftHeld) toggleMultiSort(key);
+      else toggleSort(key);
+    },
+    [shiftHeld, toggleMultiSort, toggleSort]
+  );
 
   const filterData = (value: string) => {
     setFilter(value);
@@ -212,7 +229,7 @@ const useTable = (
     keyword = keyword.toLowerCase();
     return data.filter((values) => {
       if (keyword === "") return true;
-      // console.log("values", values);
+
       const stuffs = Object.values(values);
       let has = false;
 
@@ -220,7 +237,6 @@ const useTable = (
         if (typeof v === "number") {
           v = v.toString();
         }
-        // console.log(`${v} includes ${value}`, v.includes(value));
 
         if (v.toLowerCase().includes(keyword)) {
           has = true;
@@ -230,6 +246,24 @@ const useTable = (
 
       return has;
     });
+  };
+
+  const applyHiddenColumns = (hiddenColumns: string[], columnAttrs: Column[]) =>
+    columnAttrs.filter((col) => !hiddenColumns.includes(col.key));
+
+  const applySortInfoOnColumns = (
+    columnAttrs: Column[],
+    sorts: SortType[]
+  ): Column[] => {
+    const sortMap = new Map(
+      sorts.map(({ key, orderType }) => [key, orderType])
+    );
+
+    return columnAttrs.map((col) =>
+      sortMap.has(col.key)
+        ? { ...col, sorted: sortMap.get(col.key) as OrderType }
+        : col
+    );
   };
 
   useEffect(() => {
@@ -250,20 +284,35 @@ const useTable = (
   }, []);
 
   useEffect(() => {
-    setTableData(data);
-  }, [data]);
+    // console.log("data, ogColumnAttrs");
+    setNormalizedData(formatTableData(data, normalizedColumn));
+  }, [data, normalizedColumn]);
 
   useEffect(() => {
-    setColumnAttrs(addDefaultValues(column));
+    // console.log("column, addDefaultValues");
+    setNormalizedColumn(addDefaultValues(column));
   }, [column, addDefaultValues]);
 
   useEffect(() => {
-    const filteredData = applyFilter(filter, data);
+    // console.log("ogColumnAttrs, hiddenColumns, sorts");
+    const hiddenColumnAttrs = applyHiddenColumns(
+      hiddenColumns,
+      normalizedColumn
+    );
+    const hiddenPlusSortedColumnAttrs = applySortInfoOnColumns(
+      hiddenColumnAttrs,
+      sorts
+    );
 
-    applySorts(sorts, filteredData);
+    setColumnAttrs(hiddenPlusSortedColumnAttrs);
+  }, [normalizedColumn, hiddenColumns, sorts]);
 
+  useEffect(() => {
+    // console.log("sorts, filter, ogTableData");
+    const filteredData = applyFilter(filter, normalizedData);
+    applySorts(sorts, filteredData); // sorts in place
     setTableData(filteredData);
-  }, [sorts, data, filter]);
+  }, [sorts, filter, normalizedData]);
 
   return {
     columnAttrs,
@@ -271,6 +320,7 @@ const useTable = (
     tableData,
     setTableData,
     sorts,
+    hiddenColumns,
     setSorts,
     changeColumnOrder,
     toggleMultiSort,
@@ -278,6 +328,9 @@ const useTable = (
     toggleShiftSort,
     shiftHeld,
     filterData,
+    showColumn,
+    hideColumn,
+    toggleColumn,
   };
 };
 
